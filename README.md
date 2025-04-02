@@ -23,7 +23,7 @@ This course is designed for:
 
 ## Program Structure
 
-The course spans **5 weeks**, commencing on **April 6th**, and covers the following core themes:
+Themes:
 
 1. **From Code Writing to Decision-Oriented Engineering** 
 2. **Agency in Problem Selection** 
