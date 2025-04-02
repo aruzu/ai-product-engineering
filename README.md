@@ -31,3 +31,31 @@ Themes:
 4. **GenAI Design Patterns & Indeterminate Behavior** 
 5. **Blended Roles & Rapid Feedback** 
 6. **Capstone Project**
+
+## Contributing and Course Work
+
+This repository serves multiple purposes:
+
+1. **Course Assignments**: Use this repository to:
+   - Submit your course assignments and projects
+   - Share your work with fellow students
+   - Explore the work of others
+   - Track your progress throughout the course
+
+2. **Contributing Guidelines**: Before making any contributions:
+   - Review our detailed [Contributing Guidelines](contributions.md)
+   - Follow the established workflow for submissions
+   - Use proper documentation formats
+
+3. **Getting Help**:
+   - For questions or assistance, please [open an issue](../../issues)
+   - Tag your issues appropriately (help-wanted, question, bug, etc.)
+   - Search existing issues before creating new ones
+
+4. **Collaboration**:
+   - Fork the repository for your personal work
+   - Create feature branches for specific assignments
+   - Submit pull requests for review
+   - Participate in code reviews and discussions
+
+Remember to maintain academic integrity and properly attribute any external resources used in your work.
