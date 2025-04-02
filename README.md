@@ -2,7 +2,7 @@
 
 ## Overview
 
-Welcome to the **AI Product Engineering** course repository. This platform serves as the central hub for all course-related materials, assignments, projects, and collaborative efforts. Our mission is to equip participants with the skills to identify valuable challenges, develop deep domain insights, and architect robust AI-driven solutions.&#8203;:contentReference[oaicite:0]{index=0}
+Welcome to the **AI Product Engineering** course repository. This platform serves as the central hub for all course-related materials, assignments, projects, and collaborative efforts. Our mission is to equip participants with the skills to identify valuable challenges, develop deep domain insights, and architect robust AI-driven solutions.
 
 ## Course Objectives
 
