@@ -10,13 +10,6 @@ from abstractive_summarizer import abstractive_summarize
 from compare_summarizers import generate_comparison_report
 from visualization_tool import generate_visualization, analyze_summaries
 
-
-class SummaryOutput(BaseModel):
-    extractive_summary: str
-    abstractive_summary: str
-    comparison: str
-    visualization_path: str
-
 @function_tool
 def extractive_summarizer(text: str, num_sentences: int) -> tuple[str, float]:
     """Generate an extractive summary using NLTK."""
