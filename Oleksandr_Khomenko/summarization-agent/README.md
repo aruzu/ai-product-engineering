@@ -43,3 +43,17 @@ This project implements an intelligent summarization agent that uses both extrac
 ## Dataset
 
 The project uses a product reviews dataset (`Reviews.csv`) for summarization tasks.
+
+## Usage
+
+### Interactive Mode: Summarize Your Own Text
+To summarize your own text, use the following command:
+```
+python main.py --mode interactive --text "Your text to summarize here"
+```
+
+### Batch Mode: Process Multiple Samples
+To process multiple samples from the `Reviews.csv` file, use the following command:
+```
+python main.py --mode batch --samples 10
+```
