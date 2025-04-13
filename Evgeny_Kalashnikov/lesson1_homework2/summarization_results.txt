@@ -1,0 +1,75 @@
+Summarization Comparison Results
+==================================================
+
+
+Product ID: B00550JKLU
+Number of reviews: 108
+
+Extractive Summary:
+"It's great both as an option for non-drinkers and to add alcohol too if you wish.<br /><br />I went back to the grocery store and they no longer have these, so this is the only place I know to get them now.<br /><br />UPDATE: this is the response I got from Kraft when asking if these would be available.<br />We are delighted to hear of your interest in our CRYSTAL LIGHT Mocktail Powdered Soft Drink Mix. While I think Crystal Light has done a good job imitating a margarita, it is not my favorite Crystal Light product.<br /><br />If you live near a Meijer, you can buy a five pack canister of the Margarita drink mix (as well as <a href=\"http://www.amazon.com/gp/product/B005A1LGIY\">Crystal Light Mocktails Appletini, 1.69-Ounce (Pack of 4)</a> and <a href=\"http://www.amazon.com/gp/product/B005A1LINC\">Crystal Light Moctails Mojito, 1.41-Ounce (Pack of 4)</a>) for about 2.79.<br /><br />If you recycle your plastics, be aware that Crystal Light sells its product in a #5 container. Whole Foods engages in a recycling initiative to collect #5 plastics but if you don't live near one and you care about recycling, these can be a challenging item to deal with.<br /><br />At the end of the day, this is a beverage that I would drink again but I don't know if I would purchase it if some of my other Crystal Light favorites were available like <a href=\"http://www.amazon.com/gp/product/B001E53TMQ\">Crystal Light Sunrise Ruby Red Grapefruit, 3.4-Ounce Unit (Pack of 6)</a> and <a href=\"http://www.amazon.com/gp/product/B005A1LINC\">Crystal Light Moctails Mojito, 1.41-Ounce (Pack of 4)</a>."
+
+Abstractive Summary:
+"The text explores various opinions on Crystal Light's limited-time mocktail flavors, focusing on the margarita mix. Reviewers appreciate the low calories and sugar-free formulation, but opinions on taste vary among family members. Some value the alternative to high-calorie mixes, while others find the flavor occasionally disappointing due to sweetness or dilution, with a desire for more permanent availability and consideration of taste preferences in mocktail varieties."
+
+Comparison:
+1. Execution Time:
+   - The extractive method executed very quickly (around 0.03 seconds), due to its basic extraction process using NLTK.
+   - The abstractive summarization took slightly longer (nearly 1 second) as it involves a more sophisticated natural language generation process.
+
+2. Summary Length:
+   - The extractive summary ended up being much longer (approximately 249 words over multiple sentences) because it pulls actual sentences from the text without condensing content. In theory, we intended to produce 3 sentences, but the extraction algorithm returned a larger span of text with multiple segments.
+   - The abstractive summary is much more concise at 66 words and compresses the essential details of the review into a clearer and shorter narrative.
+
+3. Summary Clarity:
+   - The extractive summary preserves original phrases and details, yet it includes extraneous context (such as direct product links and verbose updates) that may overwhelm a reader looking for the key points.
+   - The abstractive summary, however, rephrases and condenses the review into its core opinions, resulting in a more concise, easily understandable, and focused overview.
+
+Overall, while the extractive approach is quick and preserves original wording, it may introduce redundancy and less coherent condensation of the content. Conversely, the abstractive approach, despite a slightly higher computational cost, offers a clearer, more digestible summary that effectively communicates the main points from the original text.
+
+==================================================
+
+Product ID: B000FNC60Y
+Number of reviews: 46
+
+Extractive Summary:
+these were european mars which are apparently milky way bars so i wasnt thrilled and also they arrived completely melted<br />ooooops My husband and I recently came across the Mars Bars for sale at World Market in Oakbrook Terrace, Illinois. Do be aware though that judging by some of the other reviews posted, they're NOT quite the same as the mars bars that some buyers may have been expecting.<br /><br />While prices do fluctuate, as of the time of writing this package of 6 will wind up costing you just a fraction over $1.99 a bar. These Mars bars are not the Mars bars I used to eat.
+
+Abstractive Summary:
+The reviews for Mars bars are mixed, with some customers expressing disappointment due to issues like damaged packaging, melting, and unexpected taste changes. However, others appreciate the nostalgic treat despite the differences and find them to offer a satisfying chocolate experience, although they caution that the original bars may be hard to find and might not meet past expectations.
+
+Comparison:
+• Execution Time: The extractive summarization using NLTK completed very quickly (~0.012 seconds), while the abstractive approach took roughly 0.89 seconds. The extractive approach is more time-efficient.
+
+• Summary Length: The extractive summary is longer and includes raw text fragments (e.g., HTML tags) and multiple contextual points (totaling about 108 words over 6 sentences), whereas the abstractive summary is more concise (59 words over 3 sentences). The abstractive summary offers a tighter, clearer condensation of the core points.
+
+• Summary Clarity: The abstractive summary presents a more coherent and fluid narrative; it rephrases ideas in a way that removes irrelevant details and formatting issues. In contrast, the extractive summary, while directly quoting segments of the original, may include confusing elements such as HTML tags and disjointed sentences. Overall, the abstractive summary delivers enhanced readability and clarity, making it more suitable for a quick understanding of mixed customer reviews.
+
+Both methods have their merits: the extractive approach is faster and preserves original language, whereas the abstractive method generates a clearer, more summarized narrative with improved coherence.
+
+==================================================
+
+Product ID: B003U0TEJK
+Number of reviews: 13
+
+Extractive Summary:
+"However, at the time I was having trouble finding cat-specific dehydrated food that I thought my cats would tolerate, and this was the one dehydrated food I found that included a high amount of protein *and* added taurine, which cats need, so I decided to use it temporarily while I looked around more. No matter how highly rated of a kibble we would get for our little shih tzu & yorkie mix, she would throw up about three times per week. Because of the price increase, we had switched to Grandma Lucy's (Artisan freeze-dried), with equal success as far as no vomiting and her loving the food, but have switched back to Addiction because she was looking thin, as if the protein content was not enough."
+
+Abstractive Summary:
+"The text discusses the writer's experience with feeding cats and dogs different diets, including temporarily using a dehydrated dog food for their cats. The cats enjoyed the high protein and taurine content, but the writer later found a cat-specific option. Switching a dog's food to a raw dehydrated meal resolved vomiting issues, although it came with a significant price increase, leading to adjustments in pet food choices."
+
+Comparison:
+1. Execution Time:
+   - The extractive summarization (using NLTK) executed very quickly (approximately 0.006 seconds), as it selects key sentences directly from the text.
+   - The abstractive summarization took longer (around 1.18 seconds) because it involves generating a concise rephrasing and reorganization of the content.
+
+2. Summary Length:
+   - The extractive summary is longer at around 126 words with four sentences. It includes specific details verbatim from the original text, which may sometimes make it feel less concise.
+   - The abstractive summary is more concise at about 67 words, distilling the core information in a more compact format.
+
+3. Summary Clarity:
+   - The extractive approach preserves the original language and sentence structure, which ensures that none of the nuances are lost but might include extraneous details or redundant phrasing.
+   - The abstractive method provides a clearer and more focused summary by rephrasing and condensing the information, making it easier to understand the overall message while omitting less critical details.
+
+Overall, while the extractive summarization quickly pulls directly from the text preserving the original context, the abstractive approach offers a more streamlined and comprehensible summary at the cost of a slightly longer processing time.
+
+==================================================
