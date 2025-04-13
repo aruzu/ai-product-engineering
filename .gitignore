@@ -67,7 +67,12 @@ Icon
 .AppleDesktop
 Network Trash Folder
 Temporary Items
-.apdisk 
+
+.apdisk
+
+# Data files
+Vladimir_Kovtunovskiy/Reviews.csv
+*.csv 
 results/
 
 # Ignore all files from macos operating system
@@ -77,4 +82,5 @@ results/
 Icon
 ._*
 .DocumentRevisions-V100
+
 
