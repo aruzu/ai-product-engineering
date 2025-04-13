@@ -1,0 +1,7 @@
+nltk
+openai
+pandas
+kaggle
+tqdm
+python-dotenv
+openai-agents
