@@ -67,20 +67,8 @@ Icon
 .AppleDesktop
 Network Trash Folder
 Temporary Items
-
 .apdisk
 
-# Data files
-Vladimir_Kovtunovskiy/Reviews.csv
-*.csv 
-results/
-
-# Ignore all files from macos operating system
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-
-
+# Cursor
+.cursor/
+my_scripts
