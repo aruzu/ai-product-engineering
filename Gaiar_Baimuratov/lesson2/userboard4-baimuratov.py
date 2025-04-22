@@ -142,14 +142,16 @@ You are **{name}**.
 Persona details: {description}
 
 You're in a live group interview. For each question:
-1. State your answer.
-2. React to what others said (name them).
-3. Explain *why* you agree, disagree, or find a point interesting—give a bit of personal context.
+1. Repeat the question the way you understand it.
+2. State your answer.
+3. In case anything response of others is relevant to you, react to what others said (name them).
+4. Explain *why* you agree, disagree, or find a point interesting—give a bit of personal context.
 Limit to ≤120 words.
 """
     return Agent(
         name=name,
         instructions=instructions,
+        #don't change the model
         model="gpt-4o"           # high‑quality reasoning
     )
 
@@ -236,9 +238,20 @@ Return a JSON structured as:
     )
 
 # Helper function to convert transcript to a string message for facilitator
-def transcript_to_facilitator_prompt(transcript, core_questions, asked_questions):
-    prompt = f"""You are facilitating an interview about a smart water bottle product.
-    
+def transcript_to_facilitator_prompt(topic: str, transcript, core_questions, asked_questions):
+    """Create a prompt for the facilitator agent.
+
+    Previously this function contained a hard‑coded reference to a *smart water
+    bottle* product which caused the agents to keep discussing a water bottle
+    even after the interview topic was changed via *interview_config.json*.
+
+    The function now takes the current ``topic`` string explicitly so the
+    prompt always aligns with the configured interview topic.
+    """
+
+    prompt = f"""You are facilitating an interview about the following idea:
+{topic}
+
 Questions to ask:
 - Core questions: {core_questions}
 - Already asked: {asked_questions}
@@ -270,14 +283,33 @@ Recent conversation:
     ]
 
 # Helper function to convert transcript to a string message for personas
-def transcript_to_persona_prompt(persona_name, persona_description, current_question, transcript):
-    prompt = f"""You are {persona_name}. 
-Details: {persona_description}
+def transcript_to_persona_prompt(
+    persona_name: str,
+    persona_description: str,
+    current_question: str,
+    transcript,
+    *,
+    topic: str,
+):
+    """Create a chat prompt for a *persona* agent.
 
-Current question: {current_question}
+    The previous implementation did not pass the overarching *topic* of the
+    interview to the personas – only the *current question*. If the question
+    itself was generic (e.g. *“What is your initial reaction to the idea?”*)
+    personas had no idea **what idea** the facilitator referred to and would
+    answer with *"I’m not sure what the idea is"*‑style responses.
 
-Here are some other responses to this question:
-"""
+    This function now **explicitly includes the topic** so every persona has
+    the necessary context.
+    """
+
+    prompt = (
+        f"You are {persona_name}.\n"
+        f"Persona details: {persona_description}\n\n"
+        f"Interview topic: {topic}\n\n"
+        f"Current question: {current_question}\n\n"
+        "Here are some other responses to this question:\n"
+    )
     
     # Find responses to the current question
     responses_for_current_question = []
@@ -310,14 +342,21 @@ Here are some other responses to this question:
     ]
 
 # Helper function to convert transcript to a single string message for summarizer
-def transcript_to_string_message(transcript):
+def transcript_to_string_message(topic: str, transcript):
+    """Convert full transcript to a single user message for analysis.
+
+    Accepts ``topic`` to make sure downstream agents (e.g., summarizer) are
+    aware of the actual product idea under discussion instead of the previous
+    hard‑coded *smart water bottle*.
+    """
+
     transcript_text = "Interview Transcript:\n\n"
-    
+
     for msg in transcript:
         role = msg.get("role", "unknown")
         name = msg.get("name", "")
         content = msg.get("content", "")
-        
+
         if role == "user":
             transcript_text += f"Facilitator: {content}\n\n"
         elif role == "assistant":
@@ -325,10 +364,10 @@ def transcript_to_string_message(transcript):
                 transcript_text += f"{name}: {content}\n\n"
             else:
                 transcript_text += f"Assistant: {content}\n\n"
-    
+
     # Return a single message with the entire transcript as content
     return [
-        {"role": "system", "content": "Analyze this interview transcript about a smart water bottle product."},
+        {"role": "system", "content": f"Analyze this interview transcript about: {topic}"},
         {"role": "user", "content": transcript_text}
     ]
 
@@ -601,7 +640,13 @@ async def run_interview(topic: str,
     
     async def ask_persona(agent, persona_name, persona_description, current_question, transcript_so_far):
         # Convert to string-based prompt
-        prompt = transcript_to_persona_prompt(persona_name, persona_description, current_question, transcript_so_far)
+        prompt = transcript_to_persona_prompt(
+            persona_name,
+            persona_description,
+            current_question,
+            transcript_so_far,
+            topic=topic,
+        )
         return await Runner.run(agent, prompt)
 
     with trace("Interview run"):
@@ -610,7 +655,7 @@ async def run_interview(topic: str,
         
         while True:
             # Convert transcript to string-based prompt for facilitator
-            fac_prompt = transcript_to_facilitator_prompt(transcript, core_questions, asked_questions)
+            fac_prompt = transcript_to_facilitator_prompt(topic, transcript, core_questions, asked_questions)
             
             # Run facilitator with string-based prompt
             fac_run = await Runner.run(facilitator, fac_prompt)
@@ -670,7 +715,7 @@ async def run_interview(topic: str,
         sentiment_results = sentiment_run.final_output
         
         # Generate summary
-        string_messages = transcript_to_string_message(transcript)
+        string_messages = transcript_to_string_message(topic, transcript)
         sum_run = await Runner.run(summarizer, string_messages)
         report = sum_run.final_output
         
@@ -719,19 +764,20 @@ if __name__ == "__main__":
     config_path = os.getenv("INTERVIEW_CONFIG", "interview_config.json")
     try:
         cfg = load_interview_config(config_path)
+        print(cfg)
     except FileNotFoundError:
         print(
             f"[Error] Interview config JSON not found at '{config_path}'. Using sample default."
         )
-        cfg = {
-            "topic": "A subscription‑based smart water bottle that reminds users to drink.",
-            "core_questions": [
-                "What is your initial reaction to the idea?",
-                "Describe a situation where this bottle would help you.",
-                "What concerns do you have about the subscription model?",
-            ],
-            "max_followups": 3,
-        }
+        # cfg = {
+        #     "topic": "A subscription‑based smart water bottle that reminds users to drink.",
+        #     "core_questions": [
+        #         "What is your initial reaction to the idea?",
+        #         "Describe a situation where this bottle would help you.",
+        #         "What concerns do you have about the subscription model?",
+        #     ],
+        #     "max_followups": 3,
+        # }
 
     asyncio.run(
         run_interview(
