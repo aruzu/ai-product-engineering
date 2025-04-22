@@ -11,6 +11,72 @@ from rich import box
 from rich.table import Table
 from rich.markdown import Markdown
 import re
+import csv
+
+# ---------- persona utilities ---------- #
+
+def _build_description(row: Dict[str, str]) -> str:
+    """Compose a natural‑language description from a CSV row."""
+    parts = []
+
+    age = row.get("age", "").strip()
+    role = row.get("role", "").strip()
+    if age and role:
+        parts.append(f"{age}-year‑old {role}")
+    elif role:
+        parts.append(role)
+
+    context = row.get("context", "").strip()
+    if context:
+        parts.append(context)
+
+    goals = row.get("goals", "").strip()
+    if goals:
+        parts.append(f"Goals: {goals}")
+
+    pain_points = row.get("pain_points", "").strip()
+    if pain_points:
+        parts.append(f"Pain points: {pain_points}")
+
+    tech = row.get("tech_savvy", "").strip()
+    if tech:
+        parts.append(f"Tech‑savvy: {tech}")
+
+    # Fallback to explicit description column if provided
+    explicit_desc = row.get("description", "").strip()
+    if explicit_desc:
+        parts.append(explicit_desc)
+
+    return "; ".join(parts)
+
+
+def load_personas_from_csv(path: str) -> List[Dict[str, str]]:
+    """Load personas from a CSV file and return list of dicts with at least
+    `name` and `description` keys expected by the interview runner."""
+
+    personas: List[Dict[str, str]] = []
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Persona file not found: {path}")
+
+    with open(path, newline="", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            name = row.get("name", "").strip()
+            if not name:
+                # Ignore rows without a name
+                continue
+            description = _build_description(row)
+            persona_dict = {"name": name, "description": description}
+
+            # Optional explicit color / emoji columns for UI styling
+            for key in ("color", "emoji"):
+                value = row.get(key)
+                if value:
+                    persona_dict[key] = value.strip()
+
+            personas.append(persona_dict)
+
+    return personas
 
 # Create rich console
 console = Console()
@@ -263,22 +329,33 @@ def create_sentiment_prompt(transcript, personas):
     ]
 
 # Function to print colored persona responses
-def print_persona_response(persona_name, response):
-    # Different styles for different personas
-    styles = {
-        "Alice (Athlete)": {"color": "blue", "emoji": "🏃‍♀️"},
-        "Bob (Office Worker)": {"color": "green", "emoji": "💼"},
-        "Claire (Parent)": {"color": "magenta", "emoji": "👩‍👦"},
-        "Facilitator": {"color": "yellow", "emoji": "🎯"}
-    }
-    
-    # Get style or use default
-    style = styles.get(persona_name, {"color": "white", "emoji": "💬"})
+def print_persona_response(
+    persona_name: str,
+    response: str,
+    styles: Dict[str, Dict[str, str]],
+):
+    """Render a persona’s response inside a Rich panel.
+
+    Parameters
+    ----------
+    persona_name : str
+        Name exactly as used in the transcript.
+    response : str
+        The text to display.
+    styles : dict
+        Mapping ``{name: {"color": str, "emoji": str}}`` prepared once for the
+        current interview session. A special key ``"default"`` can be supplied
+        for fallback styling.
+    """
+
+    # Resolve this persona’s style or fall back
+    style = styles.get(persona_name, styles.get("default", {"color": "white", "emoji": "💬"}))
     
     # Highlight any mentions of other personas
     highlighted_text = response
-    for other_name in styles.keys():
-        if other_name in highlighted_text and other_name != persona_name:
+    for other_name in [n for n in styles.keys() if n not in {persona_name, "default"}]:
+
+        if other_name in highlighted_text:
             pattern = re.compile(f"({re.escape(other_name)})", re.IGNORECASE)
             highlighted_text = pattern.sub(r"[bold]\1[/bold]", highlighted_text)
     
@@ -414,6 +491,50 @@ async def run_interview(topic: str,
                         core_questions: List[str],
                         max_followups: int = 2):
 
+    # Build style mapping for dynamic personas
+    def _generate_styles(personas: List[Dict[str, str]]):
+        base_colors = [
+            "blue",
+            "green",
+            "magenta",
+            "cyan",
+            "yellow",
+            "red",
+            "bright_blue",
+            "bright_green",
+            "bright_magenta",
+            "bright_cyan",
+        ]
+        default_emoji_cycle = [
+            "💬",
+            "🗣️",
+            "👥",
+            "👤",
+            "🤔",
+            "🧐",
+            "😃",
+            "🙂",
+            "😉",
+            "🤓",
+        ]
+
+        styles: Dict[str, Dict[str, str]] = {}
+        for idx, p in enumerate(personas):
+            name = p["name"]
+            color = p.get("color") or base_colors[idx % len(base_colors)]
+            emoji = p.get("emoji") or default_emoji_cycle[idx % len(default_emoji_cycle)]
+            styles[name] = {"color": color, "emoji": emoji}
+
+        # Facilitator style (fixed)
+        styles["Facilitator"] = {"color": "yellow", "emoji": "🎯"}
+
+        # default fallback
+        styles["default"] = {"color": "white", "emoji": "💬"}
+
+        return styles
+
+    persona_styles = _generate_styles(personas)
+
     facilitator = make_facilitator_agent(topic, core_questions, max_followups)
     persona_agents = [make_persona_agent(p["name"], p["description"])
                       for p in personas]
@@ -495,7 +616,7 @@ async def run_interview(topic: str,
                 transcript.append(response)
                 
                 # Print colored response
-                print_persona_response(persona_name, run.final_output)
+                print_persona_response(persona_name, run.final_output, persona_styles)
             
             # Track follow-ups
             if fac_out.next_question not in core_questions:
@@ -521,31 +642,51 @@ async def run_interview(topic: str,
 
 # ---------- example invocation ---------- #
 if __name__ == "__main__":
-    #os.environ["OPENAI_API_KEY"] = "sk-..."   # put your key here
+    # os.environ["OPENAI_API_KEY"] = "sk-..."   # put your key here or use .env
     load_dotenv()
-    
-    # Check if rich is installed
+
+    # Ensure rich is available (nice to have)
     try:
-        import rich
+        import rich  # noqa: F401
     except ImportError:
         print("Installing rich package for text formatting...")
         os.system("pip install rich")
         print("Rich package installed. Restarting script...")
-        os.execv(sys.executable, ['python'] + sys.argv)
-    
-    topic = "A subscription‑based smart water bottle that reminds users to drink."
-    personas = [
-        {"name": "Alice (Athlete)",
-         "description": "26‑year‑old marathon runner; tracks hydration closely"},
-        {"name": "Bob (Office Worker)",
-         "description": "45‑year‑old desk worker; often forgets to drink water"},
-        {"name": "Claire (Parent)",
-         "description": "35‑year‑old parent juggling childcare and work"}
-    ]
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    # ---- Interview configuration ---- #
+    topic = (
+        "A subscription‑based smart water bottle that reminds users to drink."
+    )
+
+    # Load personas dynamically from CSV; default path is ./personas.csv
+    personas_csv_path = os.getenv("PERSONAS_CSV", "personas.csv")
+    try:
+        personas = load_personas_from_csv(personas_csv_path)
+    except FileNotFoundError:
+        print(
+            f"[Error] Persona CSV not found at '{personas_csv_path}'. "
+            "Falling back to built‑in demo personas."
+        )
+        personas = [
+            {
+                "name": "Alice (Athlete)",
+                "description": "26‑year‑old marathon runner; tracks hydration closely",
+            },
+            {
+                "name": "Bob (Office Worker)",
+                "description": "45‑year‑old desk worker; often forgets to drink water",
+            },
+            {
+                "name": "Claire (Parent)",
+                "description": "35‑year‑old parent juggling childcare and work",
+            },
+        ]
+
     core_qs = [
         "What is your initial reaction to the idea?",
         "Describe a situation where this bottle would help you.",
-        "What concerns do you have about the subscription model?"
+        "What concerns do you have about the subscription model?",
     ]
 
     asyncio.run(run_interview(topic, personas, core_qs, max_followups=3))
