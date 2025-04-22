@@ -1,0 +1,9 @@
+{
+  "topic": "A subscription‑based smart water bottle that reminds users to drink.",
+  "core_questions": [
+    "What is your initial reaction to the idea?",
+    "Describe a situation where this bottle would help you.",
+    "What concerns do you have about the subscription model?"
+  ],
+  "max_followups": 3
+}

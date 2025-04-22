@@ -52,6 +52,26 @@ You will see colour‑coded dialogue followed by an executive summary report.
 ## Customising the session
 
 
+
+### Configure the interview via JSON
+
+Edit `interview_config.json` to set the **topic**, **core questions** and the
+number of **max follow‑up** questions:
+
+```json
+{
+  "topic": "A subscription‑based smart water bottle that reminds users to drink.",
+  "core_questions": [
+    "What is your initial reaction to the idea?",
+    "Describe a situation where this bottle would help you.",
+    "What concerns do you have about the subscription model?"
+  ],
+  "max_followups": 3
+}
+```
+
+Point the script to another JSON file via `INTERVIEW_CONFIG` env var.
+
 ### Configure personas via CSV
 
 All personas now live in `personas.csv`. Add as many rows as you like – the script

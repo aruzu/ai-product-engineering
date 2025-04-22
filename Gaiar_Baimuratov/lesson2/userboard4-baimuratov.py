@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.markdown import Markdown
 import re
 import csv
+import json
 
 # ---------- persona utilities ---------- #
 
@@ -77,6 +78,42 @@ def load_personas_from_csv(path: str) -> List[Dict[str, str]]:
             personas.append(persona_dict)
 
     return personas
+
+# ---------- interview configuration ---------- #
+
+def load_interview_config(path: str) -> Dict[str, Any]:
+    """Load topic/questions from a JSON file.
+
+    Expected schema::
+
+        {
+          "topic": "...",
+          "core_questions": ["Q1", "Q2", ...],
+          "max_followups": 3   # optional, default 2
+        }
+    """
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Interview config file not found: {path}")
+
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    if not isinstance(data, dict):
+        raise ValueError("Interview config must be a JSON object")
+
+    topic = data.get("topic")
+    core_qs = data.get("core_questions")
+    max_followups = data.get("max_followups", 2)
+
+    if not topic or not isinstance(core_qs, list):
+        raise ValueError("Interview config missing required fields 'topic' or 'core_questions'")
+
+    return {
+        "topic": topic,
+        "core_questions": core_qs,
+        "max_followups": max_followups,
+    }
 
 # Create rich console
 console = Console()
@@ -654,12 +691,7 @@ if __name__ == "__main__":
         print("Rich package installed. Restarting script...")
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
-    # ---- Interview configuration ---- #
-    topic = (
-        "A subscription‑based smart water bottle that reminds users to drink."
-    )
-
-    # Load personas dynamically from CSV; default path is ./personas.csv
+    # ---- Load personas ---- #
     personas_csv_path = os.getenv("PERSONAS_CSV", "personas.csv")
     try:
         personas = load_personas_from_csv(personas_csv_path)
@@ -683,10 +715,29 @@ if __name__ == "__main__":
             },
         ]
 
-    core_qs = [
-        "What is your initial reaction to the idea?",
-        "Describe a situation where this bottle would help you.",
-        "What concerns do you have about the subscription model?",
-    ]
+    # ---- Load interview config (topic & questions) ---- #
+    config_path = os.getenv("INTERVIEW_CONFIG", "interview_config.json")
+    try:
+        cfg = load_interview_config(config_path)
+    except FileNotFoundError:
+        print(
+            f"[Error] Interview config JSON not found at '{config_path}'. Using sample default."
+        )
+        cfg = {
+            "topic": "A subscription‑based smart water bottle that reminds users to drink.",
+            "core_questions": [
+                "What is your initial reaction to the idea?",
+                "Describe a situation where this bottle would help you.",
+                "What concerns do you have about the subscription model?",
+            ],
+            "max_followups": 3,
+        }
 
-    asyncio.run(run_interview(topic, personas, core_qs, max_followups=3))
+    asyncio.run(
+        run_interview(
+            cfg["topic"],
+            personas,
+            cfg["core_questions"],
+            max_followups=cfg.get("max_followups", 2),
+        )
+    )
