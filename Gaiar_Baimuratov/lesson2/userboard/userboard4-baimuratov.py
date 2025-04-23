@@ -136,23 +136,52 @@ class SentimentAnalysis(BaseModel):
     personas: List[PersonaSentiment]
 
 # ---------- agent factories ---------- #
-def make_persona_agent(name: str, description: str) -> Agent:
+def make_persona_agent(
+    name: str,
+    description: str,
+    panel_context: str,
+) -> Agent:
+    """Factory that returns an *interview persona* agent.
+
+    Parameters
+    ----------
+    name : str
+        Display name used in the transcript.
+    description : str
+        One‑sentence persona description that captures age / role / goals …
+        (generated from the CSV file).
+    panel_context : str
+        Bullet‑point list that enumerates the *other* people on the interview
+        panel.  Supplying this up‑front avoids the model hallucinating or
+        confusing names when it reacts to peers.
+    """
+
     instructions = f"""
 You are **{name}**.
 Persona details: {description}
 
-You're in a live group interview. For each question:
-1. Repeat the question the way you understand it.
-2. State your answer.
-3. In case anything response of others is relevant to you, react to what others said (name them).
-4. Explain *why* you agree, disagree, or find a point interesting—give a bit of personal context.
-Limit to ≤120 words.
+You are taking part in a **panel interview** together with the following other people:
+
+{panel_context}
+
+For every question you receive:
+1. Restate it the way *you* understand it (one short sentence).
+2. Provide your answer.
+3. If something another panelist said is relevant, explicitly mention their
+   name and briefly react.
+4. Explain *why* you think that — give a snippet of personal context.
+
+Important rules:
+- Never mention or reference other people unless you've actually seen their responses
+- If no other responses are shown to you, focus only on your own perspective
+- Keep your total response ≤120 words
 """
+
     return Agent(
         name=name,
         instructions=instructions,
-        #don't change the model
-        model="gpt-4o"           # high‑quality reasoning
+        # don't change the model
+        model="gpt-4o",  # high‑quality reasoning
     )
 
 def make_facilitator_agent(topic: str,
@@ -282,7 +311,6 @@ Recent conversation:
         {"role": "user", "content": prompt}
     ]
 
-# Helper function to convert transcript to a string message for personas
 def transcript_to_persona_prompt(
     persona_name: str,
     persona_description: str,
@@ -291,16 +319,36 @@ def transcript_to_persona_prompt(
     *,
     topic: str,
 ):
-    """Create a chat prompt for a *persona* agent.
-
-    The previous implementation did not pass the overarching *topic* of the
-    interview to the personas – only the *current question*. If the question
-    itself was generic (e.g. *“What is your initial reaction to the idea?”*)
-    personas had no idea **what idea** the facilitator referred to and would
-    answer with *"I’m not sure what the idea is"*‑style responses.
-
-    This function now **explicitly includes the topic** so every persona has
-    the necessary context.
+    """Generates a formatted chat prompt for a persona agent to respond to an interview question.
+    
+    This function creates a structured prompt that includes:
+    1. The persona's identity and characteristics
+    2. The interview topic being discussed
+    3. The current question being asked
+    4. Other personas' responses to the same question (if any)
+    
+    The function extracts relevant responses from the interview transcript, filters out
+    the persona's own previous responses, and formats everything into a chat message list
+    suitable for sending to an LLM agent. The resulting prompt instructs the persona
+    to consider other participants' responses when formulating their answer.
+    
+    Parameters
+    ----------
+    persona_name : str
+        The name of the persona who will receive this prompt
+    persona_description : str
+        A description of the persona's characteristics and background
+    current_question : str
+        The question currently being asked in the interview
+    transcript : list
+        The full interview transcript so far
+    topic : str
+        The overall topic/product idea being discussed in the interview
+        
+    Returns
+    -------
+    list
+        A list of message dictionaries formatted for LLM chat completion
     """
 
     prompt = (
@@ -308,7 +356,6 @@ def transcript_to_persona_prompt(
         f"Persona details: {persona_description}\n\n"
         f"Interview topic: {topic}\n\n"
         f"Current question: {current_question}\n\n"
-        "Here are some other responses to this question:\n"
     )
     
     # Find responses to the current question
@@ -330,11 +377,14 @@ def transcript_to_persona_prompt(
         if collecting_current_responses and msg.get("role") == "user" and msg.get("content") != current_question:
             break
     
-    # Add responses to the prompt
-    for response in responses_for_current_question:
-        prompt += f"\n{response}\n"
-    
-    prompt += "\nProvide your answer to the question, considering what others have said."
+    # Add responses to the prompt if any exist
+    if responses_for_current_question:
+        prompt += "Other participants have already responded to this question:\n\n"
+        for response in responses_for_current_question:
+            prompt += f"{response}\n\n"
+        prompt += "Please provide your answer, and feel free to react to what others have said after giving your own perspective.\n"
+    else:
+        prompt += "You are the first to answer this question. Please provide your perspective.\n"
     
     return [
         {"role": "system", "content": "You are in a group interview."},
@@ -410,7 +460,7 @@ def print_persona_response(
     response: str,
     styles: Dict[str, Dict[str, str]],
 ):
-    """Render a persona’s response inside a Rich panel.
+    """Render a persona's response inside a Rich panel.
 
     Parameters
     ----------
@@ -424,7 +474,7 @@ def print_persona_response(
         for fallback styling.
     """
 
-    # Resolve this persona’s style or fall back
+    # Resolve this persona's style or fall back
     style = styles.get(persona_name, styles.get("default", {"color": "white", "emoji": "💬"}))
     
     # Highlight any mentions of other personas
@@ -612,8 +662,25 @@ async def run_interview(topic: str,
     persona_styles = _generate_styles(personas)
 
     facilitator = make_facilitator_agent(topic, core_questions, max_followups)
-    persona_agents = [make_persona_agent(p["name"], p["description"])
-                      for p in personas]
+    # Build one agent per persona, embedding *peer context* to minimise name
+    # confusion during the conversation.
+    persona_agents = []
+    for p in personas:
+        # List all *other* personas so that the current agent is aware who is
+        # on the panel.  We exclude the current persona from the list to avoid
+        # redundant self‑references.
+        others = [
+            f"• {q['name']}: {q['description']}" for q in personas if q["name"] != p["name"]
+        ]
+        panel_context = "\n".join(others) if others else "• (none)"
+
+        persona_agents.append(
+            make_persona_agent(
+                p["name"],
+                p["description"],
+                panel_context,
+            )
+        )
     summarizer = make_summarizer_agent()
     sentiment_agent = make_sentiment_agent()
 
@@ -764,7 +831,7 @@ if __name__ == "__main__":
     config_path = os.getenv("INTERVIEW_CONFIG", "interview_config.json")
     try:
         cfg = load_interview_config(config_path)
-        print(cfg)
+       # print(cfg)
     except FileNotFoundError:
         print(
             f"[Error] Interview config JSON not found at '{config_path}'. Using sample default."

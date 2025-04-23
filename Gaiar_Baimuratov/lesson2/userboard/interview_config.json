@@ -1,0 +1,9 @@
+{
+  "topic": "Research on whether large images in Bild.de articles are beneficial or should be made smaller.",
+  "core_questions": [
+    "What is your impression of the current image sizes on Bild.de articles?",
+    "How do large images impact your reading experience on news websites?",
+    "Would smaller images improve page loading and overall user experience?"
+  ],
+  "max_followups": 3
+}
