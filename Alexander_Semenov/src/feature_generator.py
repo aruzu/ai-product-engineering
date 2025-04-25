@@ -149,7 +149,7 @@ class FeatureGenerator:
         Raises:
             ValueError: If reviews_df is empty
         """
-        self.logger.info("Agent 1: Starting feature generation...")
+        self.logger.info("Starting feature generation...")
         
         if reviews_df.empty:
             self.logger.warning("Empty DataFrame provided to generate_features")
@@ -169,14 +169,8 @@ class FeatureGenerator:
         full_prompt = FEATURE_GENERATION_PROMPT.format(reviews_text=formatted_input)
         
         # Call OpenAI API
-        system_message = (
-            "You are a product analyst specializing in extracting product features "
-            "and understanding customer needs from reviews. Be precise and concise."
-        )
-        
         llm_response = call_openai_api(
             prompt=full_prompt,
-            system_message=system_message,
             api_key=self.api_key
         )
         

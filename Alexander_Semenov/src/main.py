@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import logging
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
-from src.agent_feature_generator import FeatureGeneratorAgent
+from src.feature_generator import FeatureGenerator
 from src.agent_persona_creator import PersonaCreatorAgent
 from src.reviews_preparer import prepare_reviews
 
@@ -76,6 +76,16 @@ def main():
     except Exception as e:
         logger.error(f"Unexpected error occurred: {str(e)}")
         exit(1)
+    
+    # Initialize feature generator
+    feature_generator = FeatureGenerator(
+        api_key=openai_api_key,
+        max_reviews=50
+    )
+    
+    # Generate features
+    features = feature_generator.generate_features(reviews_df)
+    logger.info(f"Generated {len(features)} features")
             
     logger.info("Pipeline completed successfully")
 
