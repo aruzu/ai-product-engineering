@@ -17,7 +17,7 @@ Make sure that:
 2. Wording is concise but specific.
 3. Features should not be abstract — describe how they could be implemented or how they would help the user.
 
-Format each feature exactly as follows::
+Format each feature exactly as follows:: 
 FEATURE: <feature name>
 PROBLEM: <problem/need description>
 SOLUTION: <how feature addresses the problem>
@@ -26,15 +26,15 @@ Reviews to analyze:
 {reviews_text}
 """
 
-class FeatureGeneratorAgent:
+class FeatureGenerator:
     """
-    Agent responsible for analyzing reviews and generating product features.
+    Responsible for analyzing reviews and generating product features.
     Uses OpenAI API to process review texts and extract meaningful features.
     """
     
     def __init__(self, api_key: str, max_reviews: int = 100):
         """
-        Initialize the Feature Generator Agent.
+        Initialize the Feature Generator.
         
         Args:
             api_key (str): OpenAI API key for authentication
@@ -42,7 +42,7 @@ class FeatureGeneratorAgent:
         """
         self.api_key = api_key
         self.max_reviews = max_reviews
-        self.logger = logging.getLogger(__name__)
+        self.logger = setup_logger(__name__)
     
     def _prepare_llm_input(self, reviews_df: pd.DataFrame) -> str:
         """
