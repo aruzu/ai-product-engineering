@@ -32,21 +32,19 @@ class FeatureGenerator:
     Uses OpenAI API to process review texts and extract meaningful features.
     """
     
-    def __init__(self, api_key: str, max_reviews: int = 100):
+    def __init__(self, api_key: str):
         """
         Initialize the Feature Generator.
         
         Args:
             api_key (str): OpenAI API key for authentication
-            max_reviews (int): Maximum number of reviews to process, defaults to 100
         """
         self.api_key = api_key
-        self.max_reviews = max_reviews
         self.logger = setup_logger(__name__)
     
     def _prepare_llm_input(self, reviews_df: pd.DataFrame) -> str:
         """
-        Prepare reviews data for LLM input by formatting and limiting the number of reviews.
+        Prepare reviews data for LLM input by formatting.
         
         Args:
             reviews_df (pd.DataFrame): DataFrame containing product reviews
@@ -67,13 +65,6 @@ class FeatureGenerator:
         else:
             selected_df = reviews_df[['Text']].copy()
             selected_df['Summary'] = ''  # Empty summaries if column doesn't exist
-        
-        # Limit number of reviews if needed
-        if len(selected_df) > self.max_reviews:
-            self.logger.info(
-                f"Limiting reviews from {len(selected_df)} to {self.max_reviews}"
-            )
-            selected_df = selected_df.sample(n=self.max_reviews, random_state=42)
         
         # Format reviews into a single string
         formatted_reviews = []

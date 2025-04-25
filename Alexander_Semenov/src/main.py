@@ -78,10 +78,7 @@ def main():
         exit(1)
     
     # Initialize feature generator
-    feature_generator = FeatureGenerator(
-        api_key=openai_api_key,
-        max_reviews=50
-    )
+    feature_generator = FeatureGenerator(api_key=openai_api_key)
     
     # Generate features
     features = feature_generator.generate_features(reviews_df)
