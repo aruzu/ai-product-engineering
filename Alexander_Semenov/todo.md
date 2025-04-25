@@ -79,5 +79,34 @@
     - [x] Добавить `logging.error` при `ValueError` (ошибка парсинга/колонок)
     - [x] Добавить `logging.info` после успешной загрузки и валидации
 
+## Фаза 2: Агент 1 - Аналитик и Генератор Фич
+
+### Шаг 5: Структура Агента 1 и Подготовка Данных
+- [x] Создать файл `src/agent_feature_generator.py`
+- [x] Импортировать `pandas`, `logging`
+- [x] Определить класс `FeatureGeneratorAgent`
+- [x] Реализовать `__init__(self, api_key)` (сохранить `api_key`)
+- [x] Инициализировать `self.logger = logging.getLogger(__name__)` в `__init__`
+- [x] Определить приватный метод `_prepare_llm_input(self, reviews_df, max_reviews=100)`
+- [x] Добавить docstring для `_prepare_llm_input`
+- [x] Выбрать колонки 'Summary', 'Text' в `_prepare_llm_input`
+- [x] Реализовать логику ограничения количества отзывов (`max_reviews`)
+- [x] Добавить логгирование, если отзывы были ограничены
+- [x] Сформатировать отзывы в единую строку
+- [x] Обработать случай пустого DataFrame в `_prepare_llm_input`
+- [x] Вернуть отформатированную строку
+- [x] Определить метод `generate_features(self, reviews_df)`
+- [x] Добавить docstring для `generate_features`
+- [x] Добавить лог `self.logger.info("Агент 1: Начало генерации функций...")`
+- [x] Вызвать `_prepare_llm_input`
+- [x] Залогировать информацию о подготовленных данных (длина строки)
+- [x] Обработать случай пустого входного DataFrame `reviews_df`
+- [x] Вернуть пустой список `[]` (placeholder)
+- [x] Добавить лог `self.logger.info("Агент 1: Завершил подготовку данных...")`
+- [x] **Модификация `src/main.py`:**
+    - [x] Импортировать `FeatureGeneratorAgent`
+    - [x] Создать экземпляр `feature_agent = FeatureGeneratorAgent(api_key=...)`
+    - [x] Вызвать `features = feature_agent.generate_features(reviews_df)`
+    - [x] Залогировать результат `features` (пока будет `[]`)
 ---
 *Чеклист завершен. Пройдитесь по пунктам для отслеживания прогресса.*

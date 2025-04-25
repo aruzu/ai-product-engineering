@@ -1,10 +1,10 @@
 import argparse
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
 import logging
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
+from src.agent_feature_generator import FeatureGeneratorAgent
 
 def main():
     """
@@ -53,6 +53,17 @@ def main():
         reviews_df = load_reviews(csv_path)
         logger.info(f"Successfully loaded {len(reviews_df)} reviews from {csv_path}")
         logger.info("Pipeline successfully completed data loading.")
+        
+        # Initialize feature generator agent
+        feature_agent = FeatureGeneratorAgent(
+            api_key=openai_api_key,
+            max_reviews=50  # Limiting to 50 reviews for initial analysis
+        )
+        
+        # Generate features
+        features = feature_agent.generate_features(reviews_df)
+        logger.info(f"Generated {len(features)} features")
+        
     except FileNotFoundError:
         logger.error(f"CSV file not found at path: {csv_path}")
         exit(1)
@@ -60,7 +71,6 @@ def main():
         logger.error(str(e))
         exit(1)
     
-    # TODO: Initialize OpenAI client (without proxy settings)
     # TODO: Implement review analysis
     # TODO: Implement focus group simulation
 
