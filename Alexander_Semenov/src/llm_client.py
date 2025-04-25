@@ -10,7 +10,6 @@ from src.logger_config import setup_logger
 
 def call_openai_api(
     prompt: str,
-    system_message: str,
     api_key: str,
     model: str = "gpt-4",
     max_retries: int = 3,
@@ -21,7 +20,6 @@ def call_openai_api(
     
     Args:
         prompt (str): The user message/prompt to send
-        system_message (str): The system message defining the assistant's role
         api_key (str): OpenAI API key
         model (str): OpenAI model to use, defaults to "gpt-4"
         max_retries (int): Maximum number of retry attempts, defaults to 3
@@ -37,13 +35,10 @@ def call_openai_api(
     
     for attempt in range(max_retries):
         try:
-            # Make the API call
+            # Make the API call with just the user message
             response = client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ]
+                messages=[{"role": "user", "content": prompt}]
             )
             
             # Extract and return the response
