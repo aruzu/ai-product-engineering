@@ -108,5 +108,29 @@
     - [x] Создать экземпляр `feature_agent = FeatureGeneratorAgent(api_key=...)`
     - [x] Вызвать `features = feature_agent.generate_features(reviews_df)`
     - [x] Залогировать результат `features` (пока будет `[]`)
+
+### Шаг 6: Клиент для OpenAI API с Retry
+- [x] Создать файл `src/llm_client.py`
+- [x] Импортировать `openai`, `os`, `time`, `logging`, `openai` errors
+- [x] Определить функцию `call_openai_api(...)` с параметрами (prompt, system_message, model, max_retries, initial_delay)
+- [x] Добавить docstring для `call_openai_api`
+- [x] Инициализировать логгер
+- [x] Получить API ключ из env, проверить, инициализировать `openai.OpenAI` клиент
+- [x] Реализовать цикл `for attempt in range(max_retries)`
+- [x] Использовать `try-except` внутри цикла
+- [x] Вызвать `client.chat.completions.create` в `try`
+- [x] Извлечь `response.choices[0].message.content` при успехе
+- [x] Залогировать успех и вернуть результат
+- [x] Обработать retryable ошибки (`RateLimitError`, `APIError` 5xx) в `except`
+- [x] Залогировать предупреждение и номер попытки
+- [x] Проверить `attempt == max_retries - 1`, залогировать ошибку, вернуть `None`
+- [x] Вычислить и применить экспоненциальную задержку (`time.sleep`)
+- [x] Обработать non-retryable ошибки (`AuthenticationError`, `BadRequestError`)
+- [x] Залогировать критическую ошибку и вернуть `None`
+- [x] Обработать общие `Exception`
+- [x] Добавить финальный `return None` после цикла (на всякий случай)
+- [x] *Действие пользователя:* Убедиться, что `openai` установлен (`pip install openai`)
+- [x] Обновить `requirements.txt` (если `openai` не был добавлен в шаге 1)
+
 ---
 *Чеклист завершен. Пройдитесь по пунктам для отслеживания прогресса.*

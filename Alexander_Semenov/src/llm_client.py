@@ -1,0 +1,94 @@
+"""
+Module for making OpenAI API calls with retry functionality.
+"""
+
+import time
+import logging
+from typing import Optional
+from openai import OpenAI
+from openai.types.chat import ChatCompletion
+from openai import (
+    APIError,
+    RateLimitError,
+    AuthenticationError,
+    BadRequestError
+)
+
+from .logger_config import setup_logger
+
+def call_openai_api(
+    prompt: str,
+    system_message: str,
+    api_key: str,
+    model: str = "gpt-4",
+    max_retries: int = 3,
+    initial_delay: float = 1.0
+) -> Optional[str]:
+    """
+    Make an OpenAI API call with exponential backoff retry logic.
+    
+    Args:
+        prompt (str): The user message/prompt to send
+        system_message (str): The system message defining the assistant's role
+        api_key (str): OpenAI API key
+        model (str): OpenAI model to use, defaults to "gpt-4"
+        max_retries (int): Maximum number of retry attempts, defaults to 3
+        initial_delay (float): Initial delay between retries in seconds, defaults to 1.0
+        
+    Returns:
+        Optional[str]: Generated text if successful, None if all retries failed
+        
+    Raises:
+        AuthenticationError: If API key is invalid
+        BadRequestError: If request is malformed
+    """
+    logger = setup_logger(__name__)
+    client = OpenAI(api_key=api_key)
+    
+    for attempt in range(max_retries):
+        try:
+            # Make the API call
+            response: ChatCompletion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            # Extract and return the response
+            result = response.choices[0].message.content
+            logger.info(
+                f"Successfully generated response (attempt {attempt + 1}/{max_retries})"
+            )
+            return result
+            
+        except (RateLimitError, APIError) as e:
+            # Handle retryable errors (rate limits, 5xx errors)
+            if attempt == max_retries - 1:
+                logger.error(
+                    f"Failed after {max_retries} attempts. Last error: {str(e)}"
+                )
+                return None
+                
+            # Calculate exponential backoff delay
+            delay = initial_delay * (2 ** attempt)
+            logger.warning(
+                f"Attempt {attempt + 1}/{max_retries} failed: {str(e)}. "
+                f"Retrying in {delay:.1f} seconds..."
+            )
+            time.sleep(delay)
+            
+        except (AuthenticationError, BadRequestError) as e:
+            # Handle non-retryable errors
+            logger.error(f"Critical error: {str(e)}")
+            return None
+            
+        except Exception as e:
+            # Handle unexpected errors
+            logger.error(f"Unexpected error: {str(e)}")
+            if attempt == max_retries - 1:
+                return None
+            time.sleep(initial_delay)
+    
+    return None
