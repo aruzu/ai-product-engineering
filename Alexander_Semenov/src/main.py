@@ -5,6 +5,7 @@ import logging
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
 from src.agent_feature_generator import FeatureGeneratorAgent
+from src.agent_persona_creator import PersonaCreatorAgent
 
 def main():
     """
@@ -71,6 +72,23 @@ def main():
                 f"\n  Name: {feature['name']}"
                 f"\n  Problem: {feature['problem']}"
                 f"\n  Solution: {feature['solution']}"
+            )
+
+        # Initialize persona creator agent
+        persona_agent = PersonaCreatorAgent(api_key=openai_api_key)
+        
+        # Generate personas
+        personas = persona_agent.create_personas(reviews_df)
+        
+        # Log generated personas
+        logger.info(f"\nCreated {len(personas)} user personas:")
+        for idx, persona in enumerate(personas, 1):
+            logger.info(
+                f"\nPersona {idx}:"
+                f"\n  Name: {persona.get('name', 'N/A')}"
+                f"\n  Background: {persona.get('background', 'N/A')}"
+                f"\n  Needs: {persona.get('needs', 'N/A')}"
+                f"\n  Goals: {persona.get('goals', 'N/A')}"
             )
         
     except FileNotFoundError:
