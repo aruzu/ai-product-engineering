@@ -157,25 +157,25 @@
 ## Фаза 3: Агент 2 - Создатель Персон
 
 ### Шаг 8: Структура Агента 2 и Подготовка Данных
-- [ ] Создать файл `src/agent_persona_creator.py`
-- [ ] Импортировать `pandas`, `logging`, `call_openai_api`
-- [ ] Определить класс `PersonaCreatorAgent`
-- [ ] Реализовать `__init__(self, api_key)`
-- [ ] Инициализировать логгер в `__init__`
-- [ ] Определить метод `create_personas(self, reviews_df, num_personas=4)`
-- [ ] Добавить docstring для `create_personas`
-- [ ] Добавить лог начала работы агента
-- [ ] Обработать случай пустого `reviews_df`
-- [ ] Реализовать подготовку данных (выбрать колонки, агрегировать/семплировать отзывы)
-- [ ] Создать строку `reviews_summary_text`
-- [ ] Залогировать информацию о подготовленных данных
-- [ ] Вернуть пустой список `[]` (placeholder)
-- [ ] Добавить лог завершения подготовки данных
-- [ ] **Модификация `src/main.py`:**
-    - [ ] Импортировать `PersonaCreatorAgent`
-    - [ ] Создать экземпляр `persona_agent = PersonaCreatorAgent(api_key=...)`
-    - [ ] Вызвать `personas = persona_agent.create_personas(reviews_df)`
-    - [ ] Залогировать результат `personas` (пока будет `[]`)
+- [x] Создать файл `src/agent_persona_creator.py`
+- [x] Импортировать `pandas`, `logging`, `call_openai_api`
+- [x] Определить класс `PersonaCreatorAgent`
+- [x] Реализовать `__init__(self, api_key)`
+- [x] Инициализировать логгер в `__init__`
+- [x] Определить метод `create_personas(self, reviews_df, num_personas=4)`
+- [x] Добавить docstring для `create_personas`
+- [x] Добавить лог начала работы агента
+- [x] Обработать случай пустого `reviews_df`
+- [x] Реализовать подготовку данных (выбрать колонки, агрегировать/семплировать отзывы)
+- [x] Создать строку `reviews_summary_text`
+- [x] Залогировать информацию о подготовленных данных
+- [x] Вернуть пустой список `[]` (placeholder)
+- [x] Добавить лог завершения подготовки данных
+- [x] **Модификация `src/main.py`:**
+    - [x] Импортировать `PersonaCreatorAgent`
+    - [x] Создать экземпляр `persona_agent = PersonaCreatorAgent(api_key=...)`
+    - [x] Вызвать `personas = persona_agent.create_personas(reviews_df)`
+    - [x] Залогировать результат `personas` (пока будет `[]`)
 
 ---
 *Чеклист завершен. Пройдитесь по пунктам для отслеживания прогресса.*
