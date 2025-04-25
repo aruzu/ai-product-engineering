@@ -177,5 +177,20 @@
     - [x] Вызвать `personas = persona_agent.create_personas(reviews_df)`
     - [x] Залогировать результат `personas` (пока будет `[]`)
 
+### Шаг 9: Генерация Описаний Персон (Агент 2 - Шаг 1 LLM)
+- [x] **Модификация `src/agent_persona_creator.py`:**
+    - [x] Определить `PERSONA_DESCRIPTION_PROMPT_TEMPLATE` (инструкция + примеры из Приложения B)
+    - [x] Определить приватный метод `_parse_persona_descriptions(self, llm_response, num_personas)`
+    - [x] Добавить docstring для `_parse_persona_descriptions`
+    - [x] Реализовать парсинг нумерованного списка из ответа LLM
+    - [x] Обработать ошибки парсинга
+    - [x] Вернуть список строк `[description1, description2, ...]`
+    - [x] **Модификация `create_personas`:**
+        - [x] Сформировать промпт для LLM, используя `PERSONA_DESCRIPTION_PROMPT_TEMPLATE`
+        - [x] Вызвать `call_openai_api` для генерации описаний
+        - [x] Проверить ответ, залогировать ошибку, вернуть `[]` если `None`
+        - [x] Вызвать `persona_descriptions = self._parse_persona_descriptions(...)`
+        - [x] Залогировать количество `len(persona_descriptions)`
+        - [x] Вернуть `persona_descriptions` (placeholder)
 ---
 *Чеклист завершен. Пройдитесь по пунктам для отслеживания прогресса.*

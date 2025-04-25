@@ -6,6 +6,7 @@ from src.data_loader import load_reviews
 from src.logger_config import setup_logger
 from src.agent_feature_generator import FeatureGeneratorAgent
 from src.agent_persona_creator import PersonaCreatorAgent
+from src.reviews_preparer import prepare_reviews
 
 def main():
     """
@@ -52,54 +53,31 @@ def main():
     # Load and validate reviews
     try:
         reviews_df = load_reviews(csv_path)
-        logger.info(f"Successfully loaded {len(reviews_df)} reviews from {csv_path}")
-        logger.info("Pipeline successfully completed data loading.")
-        
-        # Initialize feature generator agent
-        feature_agent = FeatureGeneratorAgent(
-            api_key=openai_api_key,
-            max_reviews=50  # Limiting to 50 reviews for initial analysis
-        )
-        
-        # Generate features
-        features = feature_agent.generate_features(reviews_df)
-        
-        # Log generated features with details
-        logger.info(f"\nExtracted {len(features)} product features:")
-        for idx, feature in enumerate(features, 1):
-            logger.info(
-                f"\nFeature {idx}:"
-                f"\n  Name: {feature['name']}"
-                f"\n  Problem: {feature['problem']}"
-                f"\n  Solution: {feature['solution']}"
-            )
-
-        # Initialize persona creator agent
-        persona_agent = PersonaCreatorAgent(api_key=openai_api_key)
-        
-        # Generate personas
-        personas = persona_agent.create_personas(reviews_df)
-        
-        # Log generated personas
-        logger.info(f"\nCreated {len(personas)} user personas:")
-        for idx, persona in enumerate(personas, 1):
-            logger.info(
-                f"\nPersona {idx}:"
-                f"\n  Name: {persona.get('name', 'N/A')}"
-                f"\n  Background: {persona.get('background', 'N/A')}"
-                f"\n  Needs: {persona.get('needs', 'N/A')}"
-                f"\n  Goals: {persona.get('goals', 'N/A')}"
-            )
-        
+        logger.info(f"Successfully loaded {len(reviews_df)} reviews")
     except FileNotFoundError:
         logger.error(f"CSV file not found at path: {csv_path}")
         exit(1)
     except ValueError as e:
         logger.error(str(e))
         exit(1)
-    
-    # TODO: Implement review analysis
-    # TODO: Implement focus group simulation
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        exit(1)
+
+    # Prepare formatted reviews
+    try:
+        formatted_reviews = prepare_reviews(reviews_df, max_reviews=50)
+        logger.info("\nFormatted reviews:")
+        for review in formatted_reviews:
+            logger.info(f"\n{review}")
+    except ValueError as e:
+        logger.error(str(e))
+        exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {str(e)}")
+        exit(1)
+            
+    logger.info("Pipeline completed successfully")
 
 if __name__ == "__main__":
     main()
