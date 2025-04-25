@@ -2,10 +2,29 @@
 Module for generating features from product reviews using OpenAI API.
 """
 
+import re
 import pandas as pd
 import logging
-from typing import List, Optional
+from typing import List, Dict
+from src.llm_client import call_openai_api
+from src.logger_config import setup_logger
 
+# Prompt template for feature generation
+FEATURE_GENERATION_PROMPT = """
+Below is a list of user reviews about the product. Analyze them and identify 2–3 features that would help address the most common or most critical issues mentioned in the reviews.
+Make sure that:
+1. Each feature describes how it solves a specific problem, not just restates it.
+2. Wording is concise but specific.
+3. Features should not be abstract — describe how they could be implemented or how they would help the user.
+
+Format each feature exactly as follows::
+FEATURE: <feature name>
+PROBLEM: <problem/need description>
+SOLUTION: <how feature addresses the problem>
+
+Reviews to analyze:
+{reviews_text}
+"""
 
 class FeatureGeneratorAgent:
     """
@@ -71,7 +90,52 @@ class FeatureGeneratorAgent:
         
         return "\n".join(formatted_reviews)
     
-    def generate_features(self, reviews_df: pd.DataFrame) -> List[str]:
+    def _parse_features(self, llm_response: str) -> List[Dict[str, str]]:
+        """
+        Parse the LLM response to extract structured feature information.
+        
+        Args:
+            llm_response (str): Raw response from the LLM
+            
+        Returns:
+            List[Dict[str, str]]: List of dictionaries containing parsed features
+                Each dict has 'name', 'problem', and 'solution' keys
+        """
+        if not llm_response:
+            self.logger.warning("Empty LLM response provided to _parse_features")
+            return []
+        
+        features = []
+        
+        # Split response into feature blocks
+        feature_blocks = re.split(r'\nFEATURE:', llm_response)
+        
+        # Remove any empty blocks and process each feature
+        for block in feature_blocks:
+            if not block.strip():
+                continue
+                
+            try:
+                # Parse feature components using regex
+                name_match = re.search(r'^(.+?)(?:\nPROBLEM:|$)', block, re.MULTILINE)
+                problem_match = re.search(r'PROBLEM:(.+?)(?:\nSOLUTION:|$)', block, re.MULTILINE | re.DOTALL)
+                solution_match = re.search(r'SOLUTION:(.+?)$', block, re.MULTILINE | re.DOTALL)
+                
+                if name_match:
+                    feature = {
+                        'name': name_match.group(1).strip(),
+                        'problem': problem_match.group(1).strip() if problem_match else '',
+                        'solution': solution_match.group(1).strip() if solution_match else ''
+                    }
+                    features.append(feature)
+                    
+            except Exception as e:
+                self.logger.warning(f"Error parsing feature block: {str(e)}")
+                continue
+        
+        return features
+
+    def generate_features(self, reviews_df: pd.DataFrame) -> List[Dict[str, str]]:
         """
         Analyze reviews and generate a list of product features.
         
@@ -79,7 +143,8 @@ class FeatureGeneratorAgent:
             reviews_df (pd.DataFrame): DataFrame containing product reviews
             
         Returns:
-            List[str]: List of extracted product features
+            List[Dict[str, str]]: List of dictionaries containing extracted features
+                Each dict has 'name', 'problem', and 'solution' keys
             
         Raises:
             ValueError: If reviews_df is empty
@@ -92,11 +157,37 @@ class FeatureGeneratorAgent:
         
         # Prepare input for the LLM
         formatted_input = self._prepare_llm_input(reviews_df)
+        if not formatted_input:
+            self.logger.warning("No valid input text generated from reviews")
+            return []
+            
         self.logger.info(
             f"Prepared input for LLM processing (length: {len(formatted_input)} chars)"
         )
         
-        # TODO: Implement actual feature generation using OpenAI API
-        # For now return empty list as placeholder
-        self.logger.info("Agent 1: Completed data preparation...")
-        return []
+        # Format the full prompt
+        full_prompt = FEATURE_GENERATION_PROMPT.format(reviews_text=formatted_input)
+        
+        # Call OpenAI API
+        system_message = (
+            "You are a product analyst specializing in extracting product features "
+            "and understanding customer needs from reviews. Be precise and concise."
+        )
+        
+        llm_response = call_openai_api(
+            prompt=full_prompt,
+            system_message=system_message,
+            api_key=self.api_key
+        )
+        
+        if llm_response is None:
+            self.logger.error("Failed to get response from OpenAI API")
+            return []
+            
+        self.logger.debug(f"Raw LLM response: {llm_response[:500]}...")
+        
+        # Parse features from the response
+        features = self._parse_features(llm_response)
+        self.logger.info(f"Successfully extracted {len(features)} features")
+        
+        return features

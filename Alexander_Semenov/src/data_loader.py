@@ -3,8 +3,9 @@ Module for loading and validating CSV files containing product reviews.
 """
 
 import pandas as pd
+from typing import List, Dict
 import logging
-from .logger_config import setup_logger
+from src.logger_config import setup_logger
 
 # Required columns that must be present in the CSV file
 REQUIRED_COLUMNS = [

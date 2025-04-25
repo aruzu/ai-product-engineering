@@ -132,5 +132,27 @@
 - [x] *Действие пользователя:* Убедиться, что `openai` установлен (`pip install openai`)
 - [x] Обновить `requirements.txt` (если `openai` не был добавлен в шаге 1)
 
+### Шаг 7: Генерация Функций (Агент 1 - Вызов LLM)
+- [x] **Модификация `src/agent_feature_generator.py`:**
+    - [x] Импортировать `call_openai_api` из `src.llm_client`
+    - [x] Определить константу `FEATURE_GENERATION_PROMPT` (из Приложения A)
+    - [x] Определить приватный метод `_parse_features(self, llm_response)`
+    - [x] Добавить docstring для `_parse_features`
+    - [x] Реализовать парсинг ответа LLM (regex/split) для извлечения 'name', 'problem', 'solution'
+    - [x] Вернуть список словарей `[{'name': ..., 'problem': ..., 'solution': ...}, ...]`
+    - [x] Обработать ошибки парсинга, залогировать, вернуть пустой/частичный список
+    - [x] **Модификация `generate_features`:**
+        - [x] Проверить, что `reviews_text` не пустой
+        - [x] Сформировать `full_prompt` из `FEATURE_GENERATION_PROMPT` и `reviews_text`
+        - [x] Вызвать `call_openai_api(prompt=full_prompt, system_message=...)`
+        - [x] Проверить, что ответ `llm_response` не `None`. Если `None`, залогировать и вернуть `[]`
+        - [x] Залогировать полученный `llm_response` (или его часть)
+        - [x] Вызвать `generated_features = self._parse_features(llm_response)`
+        - [x] Залогировать количество `len(generated_features)`
+        - [x] Вернуть `generated_features`
+        - [x] Обновить финальный лог метода
+- [x] **Модификация `src/main.py`:**
+    - [x] Обновить логгирование результата `features`, чтобы показать реальные данные
+
 ---
 *Чеклист завершен. Пройдитесь по пунктам для отслеживания прогресса.*

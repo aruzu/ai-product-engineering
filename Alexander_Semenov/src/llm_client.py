@@ -2,19 +2,11 @@
 Module for making OpenAI API calls with retry functionality.
 """
 
-import time
+from openai import OpenAI
 import logging
 from typing import Optional
-from openai import OpenAI
-from openai.types.chat import ChatCompletion
-from openai import (
-    APIError,
-    RateLimitError,
-    AuthenticationError,
-    BadRequestError
-)
-
-from .logger_config import setup_logger
+import time
+from src.logger_config import setup_logger
 
 def call_openai_api(
     prompt: str,
@@ -37,18 +29,16 @@ def call_openai_api(
         
     Returns:
         Optional[str]: Generated text if successful, None if all retries failed
-        
-    Raises:
-        AuthenticationError: If API key is invalid
-        BadRequestError: If request is malformed
     """
     logger = setup_logger(__name__)
+    
+    # Initialize OpenAI client with just the API key
     client = OpenAI(api_key=api_key)
     
     for attempt in range(max_retries):
         try:
             # Make the API call
-            response: ChatCompletion = client.chat.completions.create(
+            response = client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": system_message},
@@ -63,8 +53,8 @@ def call_openai_api(
             )
             return result
             
-        except (RateLimitError, APIError) as e:
-            # Handle retryable errors (rate limits, 5xx errors)
+        except Exception as e:
+            # Handle any errors
             if attempt == max_retries - 1:
                 logger.error(
                     f"Failed after {max_retries} attempts. Last error: {str(e)}"
@@ -78,17 +68,5 @@ def call_openai_api(
                 f"Retrying in {delay:.1f} seconds..."
             )
             time.sleep(delay)
-            
-        except (AuthenticationError, BadRequestError) as e:
-            # Handle non-retryable errors
-            logger.error(f"Critical error: {str(e)}")
-            return None
-            
-        except Exception as e:
-            # Handle unexpected errors
-            logger.error(f"Unexpected error: {str(e)}")
-            if attempt == max_retries - 1:
-                return None
-            time.sleep(initial_delay)
     
     return None

@@ -62,7 +62,16 @@ def main():
         
         # Generate features
         features = feature_agent.generate_features(reviews_df)
-        logger.info(f"Generated {len(features)} features")
+        
+        # Log generated features with details
+        logger.info(f"\nExtracted {len(features)} product features:")
+        for idx, feature in enumerate(features, 1):
+            logger.info(
+                f"\nFeature {idx}:"
+                f"\n  Name: {feature['name']}"
+                f"\n  Problem: {feature['problem']}"
+                f"\n  Solution: {feature['solution']}"
+            )
         
     except FileNotFoundError:
         logger.error(f"CSV file not found at path: {csv_path}")
