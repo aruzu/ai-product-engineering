@@ -5,10 +5,8 @@ import logging
 import asyncio
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
-from src.agent_persona_creator import PersonaCreatorAgent
 from src.reviews_preparer import prepare_reviews
-from agents import Agent, Runner
-from src.llm_client import call_openai_api
+from src.product_manager_agent import ProductManagerAgent
 
 async def main():
     """
@@ -18,8 +16,7 @@ async def main():
     1. Processes command line arguments
     2. Validates environment variables
     3. Loads and processes the CSV file with reviews
-    4. Performs review analysis
-    5. Simulates focus group discussions
+    4. Performs review analysis using Product Manager agent
     """
     # Set up logging
     logger = setup_logger(__name__)
@@ -80,55 +77,13 @@ async def main():
         logger.error(f"Unexpected error occurred: {str(e)}")
         exit(1)
     
-    #Init senior product manager agent
-    agent = Agent(
-        name="SeniorProductManagerAgent",
-        instructions="""
-        You are a senior product manager with extensive experience working on digital products.
-        Your primary tasks are to analyze user reviews and feedback, identify key problems and user pain points, formulate specific product tasks and features to address these issues, and build a target user profile based on the reviews.
-        You are also responsible for conducting user research when necessary.
-        Respond clearly and professionally.
-        """,
-        model="gpt-4",
-    )
-
-    prompt = """
-        You are a Senior Product Manager with extensive experience in digital products.
-        I’m going to share a set of user reviews with you.
-        Your task is to deeply analyze the feedback and identify the key user pain points.
-
-        Here’s how you should approach it:
-        1. Carefully read all the reviews. Pay attention not only to explicit complaints but also to subtle signs of frustration, unmet needs, or unspoken expectations.
-        2. Group similar feedback together. If multiple reviews touch on the same issue (e.g., "slow loading" and "freezes on startup"), treat them as one common problem.
-        3. Based on these insights, define 3 new product features. Focus on the issues that are the most critical or most frequently mentioned.
-
-        Feature writing guidelines:
-        One feature = one paragraph.
-        * Each paragraph should be clear, cohesive, and no longer than 7 sentences.
-        * The description must explain which user problem it addresses, how the feature works, and what benefit it brings to users.
-        * Avoid vague statements or generalities — be specific, professional, and actionable.
-        * Focus on features that would directly solve the identified problems and could realistically be implemented.
-        * Write in a clear, logical, and structured way. Avoid phrases like "users are unhappy" — instead, clearly define problems in a way that can immediately guide solution design.
-        * The output must contain only the list of features in the specified format — no additional summaries, explanations, or conclusions.
-
-        Response format:
-
-        Feature Name
-        Description (up to 7 sentences in one paragraph)
-
-        Feature Name
-        Description (up to 7 sentences in one paragraph)
-
-        Feature Name
-        Description (up to 7 sentences in one paragraph)
-
-        ---
-        Reviews to analyze:
-        {reviews_text}
-    """.format(reviews_text=reviews)
-
-    result = await Runner.run(agent, prompt)
-    print(result.final_output)
+    # Initialize product manager agent and analyze reviews
+    product_manager = ProductManagerAgent()
+    features = await product_manager.identify_key_user_pain_points(reviews)
+    
+    logger.info("\nIdentified features:")
+    for idx, feature in enumerate(features, 1):
+        logger.info(f"\nFeature {idx}:\n{feature}")
     
     logger.info("Pipeline completed successfully")
 
