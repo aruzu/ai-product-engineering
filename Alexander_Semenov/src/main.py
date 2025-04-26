@@ -5,7 +5,6 @@ import logging
 import asyncio
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
-from src.feature_generator import FeatureGenerator
 from src.agent_persona_creator import PersonaCreatorAgent
 from src.reviews_preparer import prepare_reviews
 from agents import Agent, Runner
