@@ -79,11 +79,18 @@ async def main():
     
     # Initialize product manager agent and analyze reviews
     product_manager = ProductManagerAgent()
-    features = await product_manager.identify_key_user_pain_points(reviews)
     
+    # Get features
+    features = await product_manager.identify_key_user_pain_points(reviews)
     logger.info("\nIdentified features:")
     for idx, feature in enumerate(features, 1):
         logger.info(f"\nFeature {idx}:\n{feature}")
+        
+    # Get personas
+    personas = await product_manager.identify_user_personas(reviews)
+    logger.info("\nIdentified user personas:")
+    for idx, persona in enumerate(personas, 1):
+        logger.info(f"\nPersona {idx}:\n{persona}")
     
     logger.info("Pipeline completed successfully")
 

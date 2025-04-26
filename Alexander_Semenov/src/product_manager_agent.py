@@ -25,43 +25,56 @@ class ProductManagerAgent:
             model="gpt-4",
         )
     
-    def _parse_features_from_response(self, response: str) -> List[str]:
+    def _parse_response(self, response: str, parse_type: str = "feature") -> List[str]:
         """
-        Parse features from LLM response into a list.
+        Parse LLM response into a list based on type.
         
         Args:
             response (str): Raw LLM response text
+            parse_type (str): Type of parsing to perform ("feature" or "persona")
             
         Returns:
-            List[str]: List of feature descriptions, each containing feature name and description
+            List[str]: List of parsed items (features or personas)
         """
         if not response:
             return []
             
-        features = []
+        items = []
         # Split response by '---' delimiter and remove empty blocks
-        feature_blocks = [block.strip() for block in response.split('---') if block.strip()]
+        blocks = [block.strip() for block in response.split('---') if block.strip()]
         
-        for block in feature_blocks:
+        for block in blocks:
             try:
-                # Find feature name and description using the prefixes
-                name_start = block.find("Feature Name:")
-                desc_start = block.find("Description:")
-                
-                if name_start != -1 and desc_start != -1:
-                    # Extract name (text between "Feature Name:" and "Description:")
-                    name = block[name_start + len("Feature Name:"):desc_start].strip()
-                    # Extract description (text after "Description:")
-                    description = block[desc_start + len("Description:"):].strip()
-                    # Format the feature string
-                    feature = f"Feature Name: {name}\nDescription: {description}"
-                    features.append(feature)
+                if parse_type == "feature":
+                    # Find feature name and description using the prefixes
+                    name_start = block.find("Feature Name:")
+                    desc_start = block.find("Description:")
+                    
+                    if name_start != -1 and desc_start != -1:
+                        # Extract name (text between "Feature Name:" and "Description:")
+                        name = block[name_start + len("Feature Name:"):desc_start].strip()
+                        # Extract description (text after "Description:")
+                        description = block[desc_start + len("Description:"):].strip()
+                        # Format the feature string
+                        item = f"Feature Name: {name}\nDescription: {description}"
+                        items.append(item)
+                        
+                elif parse_type == "persona":
+                    # Find persona description
+                    persona_start = block.find("Persona:")
+                    
+                    if persona_start != -1:
+                        # Extract persona description (text after "Persona:")
+                        description = block[persona_start + len("Persona:"):].strip()
+                        if description:
+                            items.append(f"Persona: {description}")
+                            
             except Exception as e:
                 logger = setup_logger(__name__)
-                logger.warning(f"Error parsing feature block: {str(e)}")
+                logger.warning(f"Error parsing {parse_type} block: {str(e)}")
                 continue
         
-        return features
+        return items
         
     async def identify_key_user_pain_points(self, reviews: List[str]) -> List[str]:
         """
@@ -111,4 +124,54 @@ Reviews to analyze:
         """.format(reviews_text="\n\n".join(reviews))
 
         result = await Runner.run(self.agent, prompt)
-        return self._parse_features_from_response(result.final_output)
+        return self._parse_response(result.final_output, parse_type="feature")
+    
+    async def identify_user_personas(self, reviews: List[str]) -> List[str]:
+        """
+        Analyze user reviews to identify unique user personas.
+        
+        Args:
+            reviews (List[str]): List of user reviews to analyze
+            
+        Returns:
+            List[str]: List of identified user personas
+        """
+        logger = setup_logger(__name__)
+        
+        prompt = """
+You are a user research and persona creation expert. Based on a set of user reviews, your task is to identify 3–5 unique personas.
+
+Each persona description must:
+- Be concise (1–2 sentences).
+- Be vivid, specific, and clearly convey who the person is, the context in which they use the product, their goals, and the challenges they face.
+
+Follow the style of these examples:
+- A social media influencer using their platform to share news and resources on Amazon deforestation.
+- A retired professional athlete who believes in the captain's abilities and encourages her to aim for greatness.
+- An electrical engineering graduate student conducting research on using machine learning algorithms for audio recognition.
+
+Instructions:
+1. Carefully read the user reviews.
+2. Identify recurring patterns in user profiles, usage scenarios, motivations, pain points, and behaviors.
+3. For each pattern, create a short, vivid persona description in 1–2 sentences.
+4. Avoid generic or vague descriptions (e.g., "a user who likes apps" — unacceptable).
+5. Output only the list of personas, without additional explanations or commentary.
+
+Response format:
+Persona: [1-2 sentence description]
+---
+Persona: [1-2 sentence description]
+---
+Persona: [1-2 sentence description]
+---
+Persona: [1-2 sentence description]
+---
+Persona: [1-2 sentence description]
+
+---
+Input (user reviews):
+{reviews_text}
+        """.format(reviews_text="\n\n".join(reviews))
+
+        result = await Runner.run(self.agent, prompt)
+        return self._parse_response(result.final_output, parse_type="persona")
