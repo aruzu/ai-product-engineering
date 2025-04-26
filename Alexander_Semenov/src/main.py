@@ -1,4 +1,5 @@
 import argparse
+from agents import Agent, Runner
 import os
 from dotenv import load_dotenv
 import logging
@@ -91,6 +92,62 @@ async def main():
     logger.info("\nIdentified user personas:")
     for idx, persona in enumerate(personas, 1):
         logger.info(f"\nPersona {idx}:\n{persona}")
+
+    # Ensure output directory exists
+    output_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'output')
+    os.makedirs(output_dir, exist_ok=True)
+
+    dynamic_prompt = f"""
+You are a senior product manager conducting a simulated user research session to test several new product features.
+Multiple users with different backgrounds are participating in this session.
+
+Participants:
+{personas}
+
+Features to discuss:
+{features}
+
+Your task:
+- Act as the product manager (facilitator) and conduct the conversation around each proposed feature.
+- Simulate a real-time discussion where users first react independently, then respond to each other's opinions (agreeing, disagreeing, adding new thoughts).
+- The conversation should feel natural, dynamic, and collaborative, similar to a live virtual whiteboard session.
+
+Conversation format (Virtual Board Conversation):
+- Use dialogue style with names or labels for each participant.
+- Include clarifying questions from the product manager between answers.
+- Allow users to reference or respond directly to previous comments.
+- Encourage deeper insights through follow-up questions and challenges.
+
+After the conversation:
+- Write a concise Facilitator Summary in plain text (.txt).
+- The summary must include:
+  - Key positive feedback.
+  - Main concerns or pain points discovered.
+  - Unexpected insights.
+  - Opportunities for improvement.
+
+Guidelines:
+- Keep participant responses vivid, realistic, and 2–4 sentences long.
+- Allow natural variation: agreement, disagreement, hesitations.
+- Product manager should adapt the flow based on the evolving conversation.
+""".format(personas="\n\n".join(personas)).format(features="\n\n".join(features))
+
+    agent = Agent(
+        name="UserResearchPM",
+        instructions=dynamic_prompt,
+        model="gpt-4",
+    )
+
+    result = await Runner.run(agent, "Start the user research session.")
+    
+    # Save result to file
+    output_file = os.path.join(output_dir, 'summary.txt')
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(result.final_output)
+    
+    logger.info(f"\nSaved user research session summary to: {output_file}")
+    logger.info("\nFacilitator Summary:")
+    logger.info(result.final_output)
     
     logger.info("Pipeline completed successfully")
 
