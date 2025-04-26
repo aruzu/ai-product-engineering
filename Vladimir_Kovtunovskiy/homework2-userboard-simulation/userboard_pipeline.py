@@ -46,6 +46,11 @@ from rich.logging import RichHandler
 # Added for retry logic
 from tenacity import retry, stop_after_attempt, wait_fixed
 from openai import APIError # Specific error type
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.prompts import PromptTemplate # Use standard PromptTemplate
+from langchain.tools import Tool # Example tool import, might not be needed initially
+from collections import defaultdict # Added import
 
 # --- Determine Project Root and Load Env ---
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -354,142 +359,209 @@ def ideate_features(selected: Dict[str, dict], n: int = CFG.feature_count) -> Li
 # 3) Persona Generation
 # -----------------------------------------------------------------------------
 
-# Using the robust iterative persona generation function provided previously
 def generate_personas(clusters: Dict[str, dict], count: int) -> List[Persona]:
     """
-    Generates user personas by iteratively querying an LLM for each selected cluster.
-    Prioritizes clusters based on negative sentiment or other criteria if needed.
+    Generates diverse user personas based on cluster data using a single LLM call
+    expecting a JSON output.
     """
     if not clusters:
         logger.warning("No clusters provided for persona generation.")
         return []
-
-    # --- 1. Strategic Cluster Selection (using negative sentiment count) ---
-    cluster_list = list(clusters.items())
-    try:
-        # Sort by negative sentiment count (descending)
-        cluster_list.sort(
-            key=lambda item: item[1].get('sentiment_dist', {}).get('negative', 0) if isinstance(item[1], dict) else 0,
-            reverse=True
-        )
-        logger.info("Sorted clusters for persona generation based on negative sentiment count.")
-    except Exception as e:
-        logger.error("Failed to sort clusters for persona generation: %s. Proceeding with original order.", e)
-
-    num_to_select = min(count, len(cluster_list))
-    if num_to_select == 0:
-        logger.warning("No clusters available to sample for persona generation.")
+    if count <= 0:
+        logger.warning("Requested persona count is zero or negative.")
         return []
+
+    # --- 1. Prepare Cluster Information ---
+    cluster_details_list = []
+    # Select up to 'count' clusters to base personas on, prioritizing as before if needed
+    # (Using simple selection for this example, but could retain sorting)
+    cluster_items = list(clusters.items())
+    num_to_select = min(count, len(cluster_items)) # Aim to base personas on selected clusters
+
     if num_to_select < count:
-        logger.warning("Requested %d personas, but only %d clusters available/selected. Generating %d.", count, num_to_select, num_to_select)
+        logger.warning(f"Requested {count} personas, but only {num_to_select} clusters available. Personas might be less diverse or draw inspiration from fewer clusters.")
+    elif num_to_select == 0:
+         logger.warning("No clusters available to generate personas from.")
+         return []
 
-    selected_clusters_with_ids = cluster_list[:num_to_select]
-    logger.info("Selected %d clusters for persona generation (IDs: %s)", num_to_select, [cid for cid, _ in selected_clusters_with_ids])
 
-    # --- 2. Iterative Persona Generation (per cluster) ---
-    personas: List[Persona] = []
-    for cluster_id, cluster_data in selected_clusters_with_ids:
-        # Defensive check against reaching count limit (shouldn't happen with logic above)
-        if len(personas) >= count:
-            logger.warning("Reached persona count limit unexpectedly. Stopping generation.")
-            break
+    selected_clusters_for_prompt = cluster_items[:num_to_select]
 
-        logger.info("--- Generating Persona for Cluster ID: %s ---", cluster_id)
-
-        # Validate cluster_data structure
+    for cluster_id, cluster_data in selected_clusters_for_prompt:
         if not isinstance(cluster_data, dict):
-            logger.warning("Skipping cluster '%s' due to invalid data format: %s", cluster_id, type(cluster_data))
+            logger.warning(f"Skipping cluster '{cluster_id}' due to invalid format.")
             continue
 
-        # Prepare cluster details for the prompt
         keywords_str = ", ".join(cluster_data.get('keywords', ['N/A']))
         sentiment_dist = cluster_data.get('sentiment_dist', {})
-        avg_sentiment = cluster_data.get('avg_sentiment') # May be None
         samples = cluster_data.get('samples', [])
         sample_feedback = samples[0] if samples else 'N/A'
+        sentiment_info = f"SentimentDist=[{', '.join(f'{k}: {v}' for k, v in sentiment_dist.items())}]"
+        if 'avg_sentiment' in cluster_data:
+             sentiment_info += f" | AvgSentiment={cluster_data['avg_sentiment']:.2f}"
 
-        sentiment_info = f"Sentiment Distribution=[{', '.join(f'{k}: {v}' for k, v in sentiment_dist.items())}]"
-        if avg_sentiment is not None:
-             sentiment_info += f" | Avg Sentiment={avg_sentiment:.2f}"
-
-        cluster_cue = (
-            f"Cluster Details: ID={cluster_id} | Keywords=[{keywords_str}] | "
-            f"{sentiment_info} | Sample Feedback=\"{sample_feedback[:200]}...\"" # Limit length
+        cluster_details_list.append(
+            f'- Cluster {cluster_id}: Keywords=[{keywords_str}] | {sentiment_info} | Sample="{sample_feedback[:150]}..."'
         )
 
-        prompt = (
-            f"You are an expert persona generator. Your task is to create exactly ONE distinct and detailed Spotify user persona. "
-            f"The persona MUST strictly follow this format on a single line (no extra text before or after): "
-            f"Name | Realistic Background | Short Quote | Sentiment Label (positive/neutral/negative) | Key Pain Point 1; Key Pain Point 2; ...\n\n"
-            f"Base the persona EXCLUSIVELY on the provided cluster details. Ensure the persona's background, quote, sentiment label, and pain points directly reflect the cluster's themes (keywords, sentiment distribution, average sentiment, sample feedback). "
-            f"Use the provided 'Sentiment Label' options strictly. Pain points MUST be semicolon-separated.\n\n"
-            f"Reference Cluster Details:\n"
-            f"{cluster_cue}"
-        )
+    if not cluster_details_list:
+        logger.error("No valid cluster details could be extracted for persona generation prompt.")
+        return []
+
+    cluster_summary_str = "\\n".join(cluster_details_list)
+
+    # --- 2. Construct the Prompt for JSON Output ---
+    # Define the JSON structure expected using Persona fields
+    json_format_example = """
+    ```json
+    [
+      {
+        "name": "Alex Chen",
+        "background": "Deep, diverse description of the persona's background in 5-10 sentences",
+        "quote": "Finding new music I actually like feels harder than it should be.",
+        "sentiment": "neutral",
+        "pain_points": [
+          "Music discovery algorithm often misses the mark",
+          "Too many ads in the free tier interrupt listening flow",
+          "Playlist organization options are limited"
+        ],
+        "inspired_by_cluster_id": "3"
+      },
+      {
+        "name": "Maria Garcia",
+        "background": "Deep, diverse description of the persona's background in 5-10 sentences",
+        "quote": "I just want to quickly find a good podcast for my drive or something safe for the kids.",
+        "sentiment": "positive",
+        "pain_points": [
+          "Difficult to manage separate profiles effectively on family plan",
+          "Podcast discovery feels cluttered",
+          "Lack of robust parental control features"
+        ],
+        "inspired_by_cluster_id": "1"
+      }
+    ]
+    ```
+    """
+
+    prompt = (
+        f"You are an expert persona generator specializing in user experience research. Your task is to create exactly {count} distinct and deeply grounded Spotify user personas based on the provided user feedback cluster summaries.\n\n"
+        f"**Requirements:**\n"
+        f"1.  **Generate {count} Personas:** Create exactly this number.\n"
+        f"2.  **Diversity:** Ensure personas have unique backgrounds, motivations, Spotify usage patterns, and personalities. Avoid stereotypes.\n"
+        f"3.  **Grounded in Data:** Each persona's details (background, quote, sentiment, pain points) MUST directly reflect themes from the provided cluster summaries. Assign `inspired_by_cluster_id` to the cluster ID that most influenced the persona.\n"
+        f"4.  **Sentiment:** Use ONLY 'positive', 'neutral', or 'negative' for the `sentiment` field.\n"
+        f"5.  **Pain Points:** List specific, concrete frustrations or challenges the user faces with Spotify, derived from cluster keywords and feedback.\n"
+        f"6.  **JSON Output:** Return ONLY a valid JSON list containing the persona objects. Do NOT include any explanatory text before or after the JSON block.\n"
+        f"7.  **Format:** Your response MUST be a valid JSON array starting with [ and ending with ]. Each persona object must have all required fields.\n\n"
+        f"**Cluster Summaries:**\n{cluster_summary_str}\n\n"
+        f"**Required JSON Format Example:**\n{json_format_example}\n\n"
+        f"Generate the JSON output now. Remember to:\n"
+        f"- Start with [\n"
+        f"- End with ]\n"
+        f"- Include all required fields for each persona\n"
+        f"- Do not add any text before or after the JSON\n"
+        f"- Ensure the JSON is properly formatted and valid"
+    )
+
+    # --- 3. Call LLM and Parse JSON ---
+    personas: List[Persona] = []
+    try:
+        raw_response = ask_llm(prompt)
+        logger.debug("Raw LLM response for persona generation: %s", raw_response[:2500] + "...") # Log snippet
+
+        # Clean the response by removing any markdown code fences and whitespace
+        cleaned_response = raw_response.strip()
+        if cleaned_response.startswith("```json"):
+            cleaned_response = cleaned_response[7:]  # Remove ```json
+        if cleaned_response.endswith("```"):
+            cleaned_response = cleaned_response[:-3]  # Remove ```
+        cleaned_response = cleaned_response.strip()
+
+        # Basic validation of JSON structure
+        if not cleaned_response.startswith("[") or not cleaned_response.endswith("]"):
+            logger.error("LLM response does not start with [ or end with ]. Raw response: %s", cleaned_response[:200] + "...")
+            return []
 
         try:
-            raw = ask_llm(prompt)
-            raw_lines = [line.strip() for line in raw.strip().split('\n') if line.strip()]
+            parsed_json = json.loads(cleaned_response)
+        except json.JSONDecodeError as e:
+            logger.error("Failed to parse JSON from LLM response. Error: %s. Response: %s", e, cleaned_response[:200] + "...")
+            return []
 
-            if not raw_lines:
-                logger.warning("LLM returned empty output for cluster %s.", cluster_id)
+        # --- 4. Validate and Instantiate Personas ---
+        validated_count = 0
+        for i, item in enumerate(parsed_json):
+            if not isinstance(item, dict):
+                logger.warning(f"Skipping item #{i+1} in JSON response: not a dictionary.")
                 continue
 
-            # Find the first line that looks like the persona format
-            target_line = ""
-            for line in raw_lines:
-                 parts = line.split('|')
-                 if len(parts) == 5:
-                      target_line = line
-                      logger.debug("Found potential persona line: %s", target_line)
-                      break # Use the first valid line found
+            # Basic validation (add more checks as needed)
+            required_keys = {"name", "background", "quote", "sentiment", "pain_points", "inspired_by_cluster_id"}
+            if not required_keys.issubset(item.keys()):
+                missing = required_keys - item.keys()
+                logger.warning(f"Skipping persona #{i+1}: Missing required keys: {missing}. Data: {item}")
+                continue
 
-            if not target_line:
-                 logger.warning("Could not find line with expected format ('|' separator, 5 parts) in LLM output for cluster %s. Output: '%s'", cluster_id, raw)
-                 continue
-
-            # Parse the target line
-            parts = [p.strip() for p in target_line.split("|")]
-            name, background, quote, sentiment, pain_points_str = parts
-
-            # Clean up and validate
-            quote = quote.strip("'\" ")
-            sentiment = sentiment.lower()
+            sentiment = item.get("sentiment", "").lower()
             if sentiment not in ["positive", "neutral", "negative"]:
-                logger.warning("Skipping persona for cluster %s due to invalid sentiment: '%s'. Line: '%s'", cluster_id, sentiment, target_line)
+                logger.warning(f"Skipping persona '{item.get('name', 'Unknown')}': Invalid sentiment '{item.get('sentiment')}'.")
                 continue
 
-            pain_points = [p.strip() for p in pain_points_str.split(';') if p.strip()]
-            if not pain_points:
-                logger.warning("Skipping persona for cluster %s due to missing pain points. Line: '%s'", cluster_id, target_line)
+            pain_points = item.get("pain_points", [])
+            if not isinstance(pain_points, list) or not all(isinstance(p, str) for p in pain_points):
+                logger.warning(f"Skipping persona '{item.get('name', 'Unknown')}': Invalid 'pain_points' format (must be list of strings).")
                 continue
 
-            personas.append(Persona(
-                name=name,
-                background=background,
-                quote=quote,
-                sentiment=sentiment,
-                pain_points=pain_points,
-                inspired_by_cluster_id=cluster_id # Store the link
-            ))
-            logger.info("Successfully parsed persona '%s' based on cluster %s.", name, cluster_id)
+            # Cluster ID can be None or string
+            cluster_id = item.get("inspired_by_cluster_id")
+            if cluster_id is not None and not isinstance(cluster_id, str):
+                 # Try to convert if it's a number, otherwise warn
+                 try:
+                     cluster_id = str(cluster_id)
+                 except:
+                      logger.warning(f"Persona '{item.get('name', 'Unknown')}': Invalid 'inspired_by_cluster_id' format ({type(cluster_id)}). Setting to None.")
+                      cluster_id = None
 
-        except Exception as e:
-            logger.error("Error processing LLM response or parsing persona for cluster %s: %s", cluster_id, e, exc_info=True)
-            # Continue to next cluster on error
 
-    # --- 3. Final Validation and Return ---
-    final_persona_count = len(personas)
-    logger.info("Generated %d personas successfully out of %d selected clusters.", final_persona_count, num_to_select)
+            try:
+                personas.append(Persona(
+                    name=str(item["name"]),
+                    background=str(item["background"]),
+                    quote=str(item["quote"]),
+                    sentiment=sentiment,
+                    pain_points=[str(p) for p in pain_points], # Ensure strings
+                    inspired_by_cluster_id=cluster_id
+                ))
+                validated_count += 1
+            except Exception as e: # Catch potential errors during instantiation
+                logger.warning(f"Skipping persona '{item.get('name', 'Unknown')}' due to instantiation error: {e}. Data: {item}")
+                continue
 
-    # Check if we got at least one persona if we expected some
-    if num_to_select > 0 and final_persona_count == 0:
-        logger.error("Failed to generate any valid personas despite selecting clusters.")
-        raise ValueError("Persona generation failed completely.")
-    # Check if we got fewer than intended due to errors
-    elif final_persona_count < num_to_select:
-         logger.warning("Failed to generate personas for all selected clusters. Expected %d, got %d. Some LLM calls or parsing likely failed.", num_to_select, final_persona_count)
-         # Decide whether to raise or proceed with fewer personas. Proceeding for robustness.
+        logger.info(f"Successfully parsed and validated {validated_count} personas from LLM response.")
+
+        # Check if count matches requested
+        if validated_count < count:
+             logger.warning(f"LLM generated fewer valid personas ({validated_count}) than requested ({count}).")
+        elif validated_count > count:
+             logger.warning(f"LLM generated more personas ({validated_count}) than requested ({count}). Truncating to {count}.")
+             personas = personas[:count]
+
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode JSON from LLM response: {e}")
+        logger.debug(f"Problematic JSON string: {cleaned_response}")
+        # Optionally raise, or return empty/partial list
+        return []
+    except ValueError as e:
+        logger.error(f"Validation error in parsed JSON: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error during persona generation LLM call or processing: {e}", exc_info=True)
+        return [] # Return empty list on failure
+
+    # --- 5. Final Check and Return ---
+    if not personas and count > 0:
+         logger.error("Failed to generate any valid personas.")
 
     return personas
 
@@ -497,97 +569,133 @@ def generate_personas(clusters: Dict[str, dict], count: int) -> List[Persona]:
 # 4) Board Simulation (Improved with Dynamic Facilitation & LLM Reuse)
 # -----------------------------------------------------------------------------
 
-def simulate_board(personas: Sequence[Persona], features: Sequence[FeatureProposal], rounds: int) -> Tuple[str, List[BaseMessage]]:
-    """
-    Simulates a user board discussion with dynamic facilitation across rounds,
-    reusing a single LLM client.
-    """
-    if not personas:
-        logger.warning("No personas provided for board simulation.")
-        return ("", [])
-    if not features:
-        logger.warning("No features provided for board simulation.")
-        return ("", [])
+def simulate_board(personas: Sequence[Persona],
+                   features: Sequence[FeatureProposal],
+                   rounds: int = 3
+                   ) -> Tuple[str, List[BaseMessage]]:
+    """Multi-round virtual board meeting using ConversationChain for each persona."""
+    if not personas or not features:
+        logger.warning("Missing personas (%d) or features (%d)", len(personas), len(features))
+        return "", []
 
-    logger.info("Starting board simulation with %d personas, %d features, %d rounds.", len(personas), len(features), rounds)
+    logger.info("Initializing ConversationChains for %d personas...", len(personas))
 
-    features_md = "\n".join([f"{i+1}. {f.description}" for i, f in enumerate(features)])
+    # Shared LLM for chains
+    llm = LLM # Use the globally defined LLM
 
-    # REUSE the global LLM client for all agents
-    agent_llm = LLM
+    # Define a conversational prompt template
+    # Incorporates persona details, history, and current input
+    convo_template = """
+You are {persona_name}. Act and respond authentically based on this profile:
+- Background: {persona_background}
+- Overall Sentiment towards Spotify: {persona_sentiment}
+- Key Pain Points/Frustrations: {persona_pain_points}
 
-    # --- Define Round-Specific Facilitator Prompts ---
-    round_prompts = [
-        # Round 1: Initial Reactions
-        (f"Okay everyone, thanks for joining. We're looking at {len(features)} potential new features for Spotify based on user feedback:\n{features_md}\n\n"
-         "Let's go around once. Please give your initial, honest opinion on these features in 1-3 sentences, grounding it in your own experience. What's your gut reaction?"),
+Always speak in the first person ('I', 'me', 'my'). Keep your responses concise (1-3 sentences unless asked otherwise) and focused on the discussion topic. Ground your opinions in your background and pain points. Be honest and natural. Avoid clichés like 'Honestly' or 'Thanks for bringing this up'.
 
-        # Round 2: Deeper Dive & Concerns
-        ("Thanks for those initial thoughts. Now, let's dig a bit deeper into these features:\n"
-         f"{features_md}\n\n" # Re-iterate features for context
-         "*   Are there any potential downsides, implementation challenges, or things that worry you about them?\n"
-         "*   How well do you feel they address the core problems you (or users like you) face?\n"
-         "Please share your thoughts (1-3 sentences), building on what you've heard if relevant."),
+Current Conversation:
+{history}
+Human: {input}
+{persona_name}:""" # AI prefix matches persona name for clarity
 
-        # Round 3: Prioritization & Final Thoughts
-        ("Great discussion. For our final round, let's focus on priority.\n"
-         f"{features_md}\n\n" # Re-iterate features
-         "*   If Spotify could only implement ONE of these {len(features)} features soon, which one would be the MOST important for you and why?\n"
-         "*   Any final comments or trade-offs Spotify should consider?\n"
-         "Focus on making a choice for priority (1-3 sentences).")
-    ]
-    # Ensure enough prompts exist for the number of rounds
-    if rounds > len(round_prompts):
-        default_prompt = "Continuing the discussion, please share any further thoughts or reactions to the recent comments (1-3 sentences)."
-        round_prompts.extend([default_prompt] * (rounds - len(round_prompts)))
+    prompt = PromptTemplate(
+        input_variables=["history", "input", "persona_name", "persona_background", "persona_sentiment", "persona_pain_points"],
+        template=convo_template
+    )
+
+    # --- Initialize Chains ---
+    chains = {}
+    memories = {}
+    for p in personas:
+        # Create dedicated memory for each agent
+        memory = ConversationBufferWindowMemory(
+            k=5, # Keep last 5 interactions
+            memory_key="history", # Matches prompt variable
+            input_key="input" # Matches prompt variable
+            # ai_prefix=p.name # Optional: match AI prefix in template
+            # human_prefix="Human" # Default
+        )
+        memories[p.name] = memory
+
+        # Create the ConversationChain
+        chain = ConversationChain(
+            llm=llm,
+            prompt=prompt.partial( # Pre-fill persona details into the prompt
+                persona_name=p.name,
+                persona_background=p.background,
+                persona_sentiment=p.sentiment,
+                persona_pain_points="; ".join(p.pain_points)
+            ),
+            memory=memory,
+            verbose=False # Set to True for debugging chain execution
+        )
+        chains[p.name] = chain
+        logger.debug("Initialized ConversationChain for %s", p.name)
+
+    # --- Simulation Setup ---
+    feature_list_md = "\n".join(
+        f"{i+1}. {f.description}" for i, f in enumerate(features))
+
+    transcript: List[str] = [] # Initialize empty list
+    # Overall history tracking (distinct from agent memory)
+    global_history: List[BaseMessage] = []
+    # Use description as the key for votes
+    priority_votes: defaultdict[str, int] = defaultdict(int)
 
     # --- Simulation Loop ---
-    conversation_history: List[BaseMessage] = []
-    # Use f-string for cleaner markdown block start/end
-    transcript_md_parts: List[str] = ["# 💬 Discussion Transcript", "```markdown"]
+    for r in range(1, rounds + 1):
+        logger.info("--- Starting Discussion Round %d ---", r)
+        # ---- facilitator prompt ----
+        if r == 1:
+            fac_input = (f"Welcome, everyone. We have **{len(features)}** candidate features:\n"
+                   f"{feature_list_md}\n\n"
+                   "👉 In a SHORT paragraph: what excites or worries you most?")
+        elif r == 2:
+            fac_input = ("Thanks! Now dig deeper: for EACH feature name either one concrete risk "
+                   "or one success metric. Any initial thoughts on potential impacts?")
+        else:  # final
+            fac_input = ("Time to prioritise. Pick ONE feature Spotify should ship next quarter & why "
+                   ". Mention one trade-off you'd accept.")
 
-    for round_num in range(rounds):
-        round_idx = round_num + 1
-        logger.info("--- Starting Discussion Round %d ---", round_idx)
-        facilitator_prompt = round_prompts[round_num]
+        transcript += [f"\n### 🎤 Facilitator – Round {r}", fac_input]
+        # Add facilitator turn to global history (important for context if not using shared memory)
+        global_history.append(HumanMessage(content=fac_input))
 
-        # Add facilitator prompt to transcript and history
-        transcript_md_parts.append(f"\n### 🎤 [Facilitator - Round {round_idx}]")
-        transcript_md_parts.append(facilitator_prompt)
-        conversation_history.append(HumanMessage(content=facilitator_prompt))
+        order = list(personas)
+        random.shuffle(order)
 
-        # Round-robin through personas
-        for persona in personas:
-            logger.info("Simulating turn for %s in round %d", persona.name, round_idx)
-
-            # Prepare messages: Persona's system prompt + entire shared history
-            messages_for_llm: List[BaseMessage] = [
-                SystemMessage(content=persona.system_prompt),
-            ] + conversation_history
+        for p in order:
+            logger.info("Simulating turn for persona %s in round %d", p.name, r)
+            chain = chains[p.name]
 
             try:
-                # Use the single shared LLM client with retry logic
-                reply_content = invoke_llm_with_retry(agent_llm, messages_for_llm)
-
-                # Add response to transcript and history
-                transcript_md_parts.append(f"\n#### 👤 {persona.name}")
-                transcript_md_parts.append(reply_content)
-                conversation_history.append(AIMessage(content=reply_content))
+                # Run the chain - it uses its internal memory for history
+                reply = chain.predict(input=fac_input)
+                reply = reply.strip() # Clean up whitespace
 
             except Exception as e:
-                # Log error and add placeholder to transcript
-                logger.error("Error invoking LLM for persona %s in round %d: %s", persona.name, round_idx, e, exc_info=True)
-                error_msg = f"_{persona.name} encountered a technical difficulty and could not respond._"
-                transcript_md_parts.append(f"\n#### 👤 {persona.name}")
-                transcript_md_parts.append(error_msg)
-                # Add placeholder to history to maintain turn structure if needed, or skip
-                conversation_history.append(AIMessage(content=f"Error: Could not generate response for {persona.name}."))
+                logger.error("ConversationChain execution failure for %s, round %d: %s", p.name, r, e, exc_info=True)
+                reply = "(Persona encountered an error and could not generate response)"
 
-    transcript_md_parts.append("```") # End markdown block
-    final_transcript_md = "\n".join(transcript_md_parts)
+            # Record persona's reply
+            transcript += [f"\n#### 👤 {p.name}", reply]
+            # Add agent's reply to global history
+            global_history.append(AIMessage(content=reply))
 
-    logger.info("Board simulation complete. Total messages exchanged: %d", len(conversation_history))
-    return final_transcript_md, conversation_history
+            # Tally votes in the last round (using description)
+            if r == rounds:
+                for f in features:
+                    if f.description.lower() in reply.lower():
+                        priority_votes[f.description] += 1
+                        logger.debug("Vote tallied for '%s' from %s", f.description, p.name)
+                        break # Count first match only
+
+    # transcript.append("```")   # Removed: Don't add markdown fence here
+    final_transcript_md = "\n".join(transcript)
+    logger.info("Board simulation done – %d messages in global history", len(global_history))
+
+    # Return the formatted transcript and the global message history
+    return final_transcript_md, global_history
 
 # -----------------------------------------------------------------------------
 # 5) Meeting Summary
@@ -690,8 +798,10 @@ def write_report(
             # --- Discussion Transcript (Write pre-formatted string directly) ---
             f.write("## 💬 Discussion Transcript\n\n")
             if transcript.strip():
-                 # No need to parse, just write the markdown string generated by simulate_board
-                 f.write(transcript + "\n\n")
+                 # Wrap the transcript content in a markdown code block
+                 f.write("```markdown\n")
+                 f.write(transcript + "\n")
+                 f.write("```\n\n")
             else:
                  f.write("*No discussion transcript was generated.*\n\n")
 
