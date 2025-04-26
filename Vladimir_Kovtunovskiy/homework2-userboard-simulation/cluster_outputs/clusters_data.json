@@ -1,0 +1,321 @@
+[
+  {
+    "cluster_id": 0,
+    "count": 7803,
+    "avg_sentiment": 0.534,
+    "sentiment_dist": {
+      "positive": 6429,
+      "negative": 987,
+      "neutral": 387
+    },
+    "keywords": [
+      "love spotify",
+      "premium",
+      "like",
+      "ads",
+      "use",
+      "really",
+      "want",
+      "spotify best",
+      "better",
+      "using"
+    ],
+    "samples": [
+      "Great sound quality, easy to make playlists, wear os app is also nice but it requires being connected to phones spotify. Though premium is pretty much required, and some smaller artists I can find on soundcloud/youtube/bandcamp aren't available on spotify, but most of what I listen is available. Trying with a trial of premium atm, considering starting to pay for it mainly because the sound quality is way better than other apps I use. Btw you need to set quality in settings for best quality.",
+      "It was a ok app didn't have it that long was use to pandora music playing guess I will try it again some day",
+      "To start off, I'd like to say that I'm liking spotify so far. But so, at some point, it adds random songs to my playlist. I have already added 15 songs. Why does it add more? I agree with most reviews, saying the app is stupidly trash. But then I also like it, no? 50/50 kind of thing.",
+      "I've had Spotify Premium for years, and absolutely LOVE IT! It's great to be able to make playlists for certain situations (cleaning, exercise, romance) and when suggestions are made based on what I'm already listening to, I find gems I'd never find otherwise.. overall I recommend Premium to everyone!",
+      "It's amazing sound feeling I love it spotify 🙃"
+    ]
+  },
+  {
+    "cluster_id": 1,
+    "count": 3282,
+    "avg_sentiment": 0.008,
+    "sentiment_dist": {
+      "negative": 1521,
+      "positive": 1474,
+      "neutral": 287
+    },
+    "keywords": [
+      "offline",
+      "downloaded",
+      "download",
+      "internet",
+      "premium",
+      "connection",
+      "fix",
+      "data",
+      "phone",
+      "wifi"
+    ],
+    "samples": [
+      "Samsung Galaxy S7 Active I'm a paid member who downloads Playlist for offline listening. For the last few weeks, songs randomly disappear and are no longer downloaded...meaning I can't play any music! This is a large problem...",
+      "Cannot access my downloaded albums offline. Pixel 6 pro",
+      "Love the offline mode and ability to download playlists. I just realized I could upload music too.",
+      "How is this app so awful at playing downloaded content in offline mode? What a joke of an application",
+      "Issues - I see I am not the only one with the issues. Bugging out, stop playing, can't pause or skip. And I pay for a family plan!!!! This is unacceptable and disappointing"
+    ]
+  },
+  {
+    "cluster_id": 2,
+    "count": 5624,
+    "avg_sentiment": 0.586,
+    "sentiment_dist": {
+      "positive": 5051,
+      "neutral": 315,
+      "negative": 258
+    },
+    "keywords": [
+      "easy",
+      "selection",
+      "quality",
+      "like",
+      "great music",
+      "sound",
+      "want",
+      "easy use",
+      "use",
+      "good music"
+    ],
+    "samples": [
+      "Would be great to be able to see all tracks of an artist sorted chronologically",
+      "It's really good just wish we could choose our own song, but I know I can't change that 🙂",
+      "Can play anything I want including classical music. Love it.",
+      "Spot on great choice of music may be put some 60s 70s 80s on I can't find them For someone as rubbish with tex it's easy",
+      "Life savior, I ll never leave you, your the cheese to my cake. The cherry on top."
+    ]
+  },
+  {
+    "cluster_id": 3,
+    "count": 4781,
+    "avg_sentiment": 0.166,
+    "sentiment_dist": {
+      "positive": 2709,
+      "negative": 1543,
+      "neutral": 529
+    },
+    "keywords": [
+      "ads",
+      "premium",
+      "like",
+      "annoying",
+      "free",
+      "app ads",
+      "minutes",
+      "commercials",
+      "ads songs",
+      "really"
+    ],
+    "samples": [
+      "Best music app but your ads are getting more entertaining..i don't have premium cause i enjoy your ads 🤣",
+      "Edit: Doesn't play the song I've been linked to. What's the point of my friends sharing songs if I literally cannot listen to them? old: I got it so I could listen to songs my friend sends me. Five ads played and I gave up on waiting for them to be over and just searched the song on YouTube instead.",
+      "Earlier Ads were to convey infomation of Plans thay have but now they just HAVE TO ANNOY AUDIENCE AND FORCE THEM TO GET THEIR PREMIM",
+      "It gives me like 3 or 4 ads and I thought it was like a one ads and the other problem is that you can't even skip how many times you have a limit of skipping like 6 time",
+      "Nice experience but advertisements are too annoying as well as irritating"
+    ]
+  },
+  {
+    "cluster_id": 4,
+    "count": 5710,
+    "avg_sentiment": 0.65,
+    "sentiment_dist": {
+      "positive": 5301,
+      "negative": 229,
+      "neutral": 180
+    },
+    "keywords": [
+      "music app",
+      "best music",
+      "best app",
+      "app music",
+      "streaming",
+      "love app",
+      "good app",
+      "great app",
+      "listening",
+      "like"
+    ],
+    "samples": [
+      "Was good but doesn't work properly with a bunch of radios that have control of the app via touch screen anymore. So I may stop paying soon and just go with the free version or another app.",
+      "This is my favourite music app by a long shot and I can stream almost any song that I want to.",
+      "My personal favorite Audio App. The functionality and layout is Fantastic.",
+      "It is the best music app I have ever seen..",
+      "The best music app."
+    ]
+  },
+  {
+    "cluster_id": 5,
+    "count": 5969,
+    "avg_sentiment": -0.019,
+    "sentiment_dist": {
+      "negative": 2837,
+      "positive": 2591,
+      "neutral": 541
+    },
+    "keywords": [
+      "playing",
+      "update",
+      "pause",
+      "bar",
+      "stop",
+      "keeps",
+      "stops",
+      "bluetooth",
+      "fix",
+      "randomly"
+    ],
+    "samples": [
+      "Recently the experience has plummeted greatly, player doesn't show up either in app or in notification section, I have to kill the app in order to get back to it, app freezes randomly, no, not a hardware bottleneck, I'm currently using an S21, it's just the app sucks badly",
+      "Can't listen to my music it always pause when it plays",
+      "Fix the bugs on your app. I'm unable to go twice a day without force stopping your app. It dousnt stop playing and needs to be forced closed or will stop playing music randomly. Fix this",
+      "It's a very nice app. But the reason why I'm giving it 4 star because before even when I off my screen the music will still be there and when i pause for 1 hour 2 hour it will still be there...but now when i off my screen and pause it for like 2 minutes it disappears....please can u fix that please....I recommend this app..but please fix that problem...thank you in advance",
+      "There's a glitch recently where it auto skips through songs. And won't play more than 3 or 4 secs of each song. Had this app for years and it just started doing it."
+    ]
+  },
+  {
+    "cluster_id": 6,
+    "count": 4653,
+    "avg_sentiment": 0.241,
+    "sentiment_dist": {
+      "positive": 2889,
+      "negative": 1490,
+      "neutral": 274
+    },
+    "keywords": [
+      "podcasts",
+      "podcast",
+      "music podcasts",
+      "rogan",
+      "joe",
+      "music podcast",
+      "joe rogan",
+      "listening",
+      "use",
+      "like"
+    ],
+    "samples": [
+      "Just constantly recommending podcasts to me despite not using it for podcasts. Can't stop it and it's now useless for discovering music and much more frustrating just to get to music.",
+      "For me this is the best music and podcast Player out there I enjoy every bit of this app nice one Spotify",
+      "This is the only streaming app I use but recently it has started to crash too frequently to count. I can't get through a podcast episode without it crashing at least once. It's insane!!! Please fix whatever the issue is or I'll have to look for another app.",
+      "Used to be the only choice but not anymore. I prefer my music service not pushing podcasts to me. Higher quality music can be found elsewhere too.",
+      "This version glitches nonstop for podcasts. It doesn't update what I'm listening to or where I am in that episode. The notification bar isn't showing up. It randomly stops playing every 10-15 minutes. So annoying."
+    ]
+  },
+  {
+    "cluster_id": 7,
+    "count": 7006,
+    "avg_sentiment": 0.175,
+    "sentiment_dist": {
+      "positive": 3799,
+      "negative": 2210,
+      "neutral": 997
+    },
+    "keywords": [
+      "premium",
+      "use",
+      "easy",
+      "update",
+      "easy use",
+      "account",
+      "log",
+      "fix",
+      "working",
+      "work"
+    ],
+    "samples": [
+      "Most recommended app I have been told to use and work very nicely",
+      "Literally the only application I can personally say to have enjoyed completely without any major problems.",
+      "After the latest update the app has gone a bit wonky. Never happened before. Every time I opened the app my phone would ask me what app I'm gonna use to open the app itself as if I just clicked on link instead of the app directly. At first I skipped the step and it made the app continuously crashing it even sent my phone into a bootloop. Again, it never happened before both on my phone and on the app. I completed the step and the app is okay again now.",
+      "Love the variety and the ability to play all of my favorites. What ever mood I'm in my favorites are there.",
+      "I have always love this app but right now I can't log in to my account and its pissing me off. So if anyone else is having trouble start trying to contact them."
+    ]
+  },
+  {
+    "cluster_id": 8,
+    "count": 1156,
+    "avg_sentiment": 0.41,
+    "sentiment_dist": {
+      "positive": 851,
+      "negative": 177,
+      "neutral": 128
+    },
+    "keywords": [
+      "lyrics",
+      "lyrics songs",
+      "language",
+      "english",
+      "songs lyrics",
+      "like",
+      "feature",
+      "available",
+      "lyrics song",
+      "lyrics feature"
+    ],
+    "samples": [
+      "This is a perfect App for listening song... And i love its lyrics seeing feature.",
+      "This app is amazing,, the only thing I would like to tell developers of this app is ,, that please provide lyrics of hindi songs in it's original script,, as you have provided in Korean and Punjabi songs.. I will more appreciate if you did it....",
+      "I really like the app, the design is simple and perfect. The Lyrics Funktion is now one of my favorite Features. The Algorithm for made for you is pretty good too. One thing i would add is if you swipe down on a song, i goes back to main page. (Like YouTube when you are on a video.)",
+      "Great app i just wish you would add lyrics edit fixed thanks",
+      "I think spotify just need to hire a punjabi employee to right a perfect punjabi lyrics for punjabi songs then it will be excillent as there are many listener who wants to sing a song while listening as me 😁. I just noticed that there are many wrong lyrics over there. Overall it is good app"
+    ]
+  },
+  {
+    "cluster_id": 9,
+    "count": 9140,
+    "avg_sentiment": 0.19,
+    "sentiment_dist": {
+      "positive": 5462,
+      "negative": 3032,
+      "neutral": 646
+    },
+    "keywords": [
+      "playlist",
+      "want",
+      "like",
+      "shuffle",
+      "premium",
+      "add",
+      "playlists",
+      "plays",
+      "random",
+      "play song"
+    ],
+    "samples": [
+      "I really love this app. I love how I can listen to all of the different genres of music, even the obscure music. I would have given you 5 stars except for one thing. I hate how you start the next song when there's ten seconds left of the song I'm listening to and I'm hearing both songs at the same time. If you would fix this little problem, I would give you that fifth star.",
+      "I cant add songs to playlists all the time and can never click on a new album to see what the songs or add them. Been this way for like a year.",
+      "App is pretty good. Artists need a bigger cut of profits.",
+      "I enjoy listening to my music in Spotify but it's kind of dumb to listen to your songs and get an ad interruption durning a song other wise I would've rate a 5 but I give you 3 rating it could be better",
+      "Lots of glitches lately like I can't scroll sideways on the ganra selector in my liked playlist"
+    ]
+  },
+  {
+    "cluster_id": 10,
+    "count": 5900,
+    "avg_sentiment": 0.027,
+    "sentiment_dist": {
+      "positive": 2797,
+      "negative": 2662,
+      "neutral": 441
+    },
+    "keywords": [
+      "fix",
+      "update",
+      "playing",
+      "premium",
+      "phone",
+      "account",
+      "time",
+      "playlist",
+      "problem",
+      "like"
+    ],
+    "samples": [
+      "I loved this app but recently when updated I cannot play songs from the playlistd that I made and when i press the play button it says that I get only 6 skips per hour. I mean like \"WHAT THE HELL\". I want to play the songs in an order i have set my self. Not mixed. And whenever i play a song spotify premium keeps coming off. I'm deleting this song until this is fixed. Until then Bye.",
+      "I really like Spotify, but stills having bugs and so many errors, fix them please 🙏",
+      "It used to be so good but now I can never get it to work it always says no internet connection available but I have internet because I can use Google YouTube Instagram and everything but Spotify just will not connect to the internet",
+      "One of the best app I've ever seen...clean UI and is compatible with my Alexa and Google assistant",
+      "I've been using Spotify for years and I love it! The only problem that I have is that whenever I make a playlist that is only about an hour long, Spotify adds songs I don't want. Now I am listening to a playlist and everytime I skip a song that they added it goes to another one they added. Please change this it is very annoying and not fair if I'm trying to customize a playlist for myself."
+    ]
+  }
+]
