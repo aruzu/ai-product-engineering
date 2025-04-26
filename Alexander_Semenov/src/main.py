@@ -2,13 +2,16 @@ import argparse
 import os
 from dotenv import load_dotenv
 import logging
+import asyncio
 from src.data_loader import load_reviews
 from src.logger_config import setup_logger
 from src.feature_generator import FeatureGenerator
 from src.agent_persona_creator import PersonaCreatorAgent
 from src.reviews_preparer import prepare_reviews
+from agents import Agent, Runner
+from src.llm_client import call_openai_api
 
-def main():
+async def main():
     """
     Main function that handles the review analysis and focus group simulation.
     
@@ -65,10 +68,11 @@ def main():
         exit(1)
 
     # Prepare formatted reviews
+    reviews = ""
     try:
-        formatted_reviews = prepare_reviews(reviews_df, max_reviews=50)
+        reviews = prepare_reviews(reviews_df, max_reviews=10)
         logger.info("\nFormatted reviews:")
-        for review in formatted_reviews:
+        for review in reviews:
             logger.info(f"\n{review}")
     except ValueError as e:
         logger.error(str(e))
@@ -77,14 +81,57 @@ def main():
         logger.error(f"Unexpected error occurred: {str(e)}")
         exit(1)
     
-    # Initialize feature generator
-    feature_generator = FeatureGenerator(api_key=openai_api_key)
+    #Init senior product manager agent
+    agent = Agent(
+        name="SeniorProductManagerAgent",
+        instructions="""
+        You are a senior product manager with extensive experience working on digital products.
+        Your primary tasks are to analyze user reviews and feedback, identify key problems and user pain points, formulate specific product tasks and features to address these issues, and build a target user profile based on the reviews.
+        You are also responsible for conducting user research when necessary.
+        Respond clearly and professionally.
+        """,
+        model="gpt-4",
+    )
+
+    prompt = """
+        You are a Senior Product Manager with extensive experience in digital products.
+        I’m going to share a set of user reviews with you.
+        Your task is to deeply analyze the feedback and identify the key user pain points.
+
+        Here’s how you should approach it:
+        1. Carefully read all the reviews. Pay attention not only to explicit complaints but also to subtle signs of frustration, unmet needs, or unspoken expectations.
+        2. Group similar feedback together. If multiple reviews touch on the same issue (e.g., "slow loading" and "freezes on startup"), treat them as one common problem.
+        3. Based on these insights, define 3 new product features. Focus on the issues that are the most critical or most frequently mentioned.
+
+        Feature writing guidelines:
+        One feature = one paragraph.
+        * Each paragraph should be clear, cohesive, and no longer than 7 sentences.
+        * The description must explain which user problem it addresses, how the feature works, and what benefit it brings to users.
+        * Avoid vague statements or generalities — be specific, professional, and actionable.
+        * Focus on features that would directly solve the identified problems and could realistically be implemented.
+        * Write in a clear, logical, and structured way. Avoid phrases like "users are unhappy" — instead, clearly define problems in a way that can immediately guide solution design.
+        * The output must contain only the list of features in the specified format — no additional summaries, explanations, or conclusions.
+
+        Response format:
+
+        Feature Name
+        Description (up to 7 sentences in one paragraph)
+
+        Feature Name
+        Description (up to 7 sentences in one paragraph)
+
+        Feature Name
+        Description (up to 7 sentences in one paragraph)
+
+        ---
+        Reviews to analyze:
+        {reviews_text}
+    """.format(reviews_text=reviews)
+
+    result = await Runner.run(agent, prompt)
+    print(result.final_output)
     
-    # Generate features
-    features = feature_generator.generate_features(reviews_df)
-    logger.info(f"Generated {len(features)} features")
-            
     logger.info("Pipeline completed successfully")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
