@@ -125,6 +125,23 @@
 - ✅ Code formatting with black applied to edited files
 - ✅ All linter checks pass with ruff
 
+### Recent Fixes (Sanity Check - April 27, 2025)
+- ✅ Fixed formatting issues in multiple files - applied black to:
+  - feature_adapter.py
+  - batch_interviews.py
+  - process_all_features.py
+  - report_generator.py
+  - userboard/tests/test_utils.py
+- ✅ Fixed lint issues in multiple files:
+  - Removed unused imports (asyncio, json, List, Optional, Tuple)
+  - Fixed unused variables (`process` in subprocess.run calls)
+  - Fixed f-strings without placeholders
+  - Used ruff --fix to automate repairs where possible
+  - Used ruff --unsafe-fixes for more complex issues
+- ✅ All tests pass successfully
+- ✅ All linter checks now pass with ruff
+- ✅ Code follows consistent formatting and style conventions
+
 
 ## Success Criteria
 Our goal is to analyze app reviews using LLMs to extract feature requests and generate interview questions.

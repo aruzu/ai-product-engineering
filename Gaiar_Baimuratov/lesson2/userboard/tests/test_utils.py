@@ -87,24 +87,18 @@ def test_load_interview_config(tmp_path: Path):
     assert cfg["topic"] == legacy_data["topic"]
     assert cfg["core_questions"] == legacy_data["core_questions"]
     assert cfg["max_followups"] == 2
-    
+
     # Test batch format
     batch_config_path = tmp_path / "batch_config.json"
     batch_data = {
         "features": [
-            {
-                "topic": "Feature 1",
-                "core_questions": ["Q1", "Q2"]
-            },
-            {
-                "topic": "Feature 2",
-                "core_questions": ["Q3", "Q4"]
-            }
+            {"topic": "Feature 1", "core_questions": ["Q1", "Q2"]},
+            {"topic": "Feature 2", "core_questions": ["Q3", "Q4"]},
         ],
-        "max_followups": 3
+        "max_followups": 3,
     }
     batch_config_path.write_text(json.dumps(batch_data), encoding="utf-8")
-    
+
     batch_cfg = interview.load_interview_config(str(batch_config_path))
     assert "features" in batch_cfg
     assert len(batch_cfg["features"]) == 2
