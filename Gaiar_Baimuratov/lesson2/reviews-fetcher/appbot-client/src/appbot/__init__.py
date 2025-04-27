@@ -1,3 +1,3 @@
 from .client import AppBotClient
 
-__all__ = ['AppBotClient']
+__all__ = ["AppBotClient"]

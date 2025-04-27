@@ -3,9 +3,9 @@ AppBot API Client
 
 A client for interacting with the AppBot API to retrieve app review data and analytics.
 """
+
 import os
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Union
 
 import requests
 from dotenv import load_dotenv
@@ -17,6 +17,7 @@ class AppBotClient:
     """
     Client for interacting with the AppBot API.
     """
+
     BASE_URL = "https://api.appbot.co/api/v2"
 
     def __init__(self, username: Optional[str] = None, password: Optional[str] = None):
@@ -36,7 +37,13 @@ class AppBotClient:
                 "(APPBOT_API_USERNAME and APPBOT_API_PASSWORD)."
             )
 
-    def _request(self, endpoint: str, method: str = "GET", params: Optional[Dict] = None, timeout: int = 60) -> Dict:
+    def _request(
+        self,
+        endpoint: str,
+        method: str = "GET",
+        params: Optional[Dict] = None,
+        timeout: int = 60,
+    ) -> Dict:
         """
         Make a request to the AppBot API.
 
@@ -53,7 +60,14 @@ class AppBotClient:
         auth = (self.username, self.password)
 
         try:
-            response = requests.request(method, url, auth=auth, params=params, timeout=timeout)
+            # Ensure timeout is explicitly passed
+            response = requests.request(
+                method,
+                url,
+                auth=auth,
+                params=params,
+                timeout=timeout,  # Make sure timeout is passed
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
@@ -63,14 +77,20 @@ class AppBotClient:
         except requests.exceptions.Timeout:
             print(f"Request timed out after {timeout} seconds. Retrying...")
             # Retry once with increased timeout
-            response = requests.request(method, url, auth=auth, params=params, timeout=timeout * 2)
+            response = requests.request(
+                method,
+                url,
+                auth=auth,
+                params=params,
+                timeout=timeout * 2,  # Make sure timeout is passed
+            )
             response.raise_for_status()
             return response.json()
 
     def get_token_info(self) -> Dict:
         """
         Get information about the current API token.
-        
+
         Returns:
             Dictionary containing token information.
         """
@@ -79,7 +99,7 @@ class AppBotClient:
     def get_apps(self) -> List[Dict]:
         """
         Get a list of apps associated with the team.
-        
+
         Returns:
             List of app dictionaries.
         """
@@ -89,7 +109,7 @@ class AppBotClient:
     def get_detected_languages(self) -> List[Dict]:
         """
         Get a list of detected languages.
-        
+
         Returns:
             List of language dictionaries.
         """
@@ -99,7 +119,7 @@ class AppBotClient:
     def get_topics(self) -> List[Dict]:
         """
         Get a list of topics, custom topics & tags.
-        
+
         Returns:
             List of topic dictionaries.
         """
@@ -109,23 +129,25 @@ class AppBotClient:
     def get_countries(self, app_id: Union[int, str]) -> List[Dict]:
         """
         Get a list of review-specific countries for an app.
-        
+
         Args:
             app_id: ID of the application.
-            
+
         Returns:
             List of country dictionaries.
         """
-        response = self._request(f"apps/{app_id}/countries", timeout=300)  # Use 5-minute timeout
+        response = self._request(
+            f"apps/{app_id}/countries", timeout=300
+        )  # Use 5-minute timeout
         return response.get("results", [])
 
     def get_ratings_countries(self, app_id: Union[int, str]) -> List[Dict]:
         """
         Get a list of ratings-specific countries for an app.
-        
+
         Args:
             app_id: ID of the application.
-            
+
         Returns:
             List of country dictionaries.
         """
@@ -147,7 +169,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get reviews for an app.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -160,12 +182,12 @@ class AppBotClient:
             topic: Topic, custom topic or tag ID to filter to.
             page: Page number to fetch.
             timeout: Request timeout in seconds (default: 60).
-            
+
         Returns:
             Dictionary containing reviews and pagination info.
         """
         params = {"page": page}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -182,8 +204,11 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
-        return self._request(f"apps/{app_id}/reviews", params=params, timeout=300)  # Use 5-minute timeout
+
+        # Ensure timeout is explicitly passed
+        return self._request(
+            f"apps/{app_id}/reviews", params=params, timeout=300  # Use 5-minute timeout
+        )
 
     def get_review_summary_by_date(
         self,
@@ -201,7 +226,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get review summary by date.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -215,12 +240,12 @@ class AppBotClient:
             pad_empty: Whether to return items for empty days.
             force_daily: Whether to prevent result from being aggregated over increasingly
                          large time periods based on supplied date range.
-            
+
         Returns:
             Dictionary containing review summary by date.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -237,10 +262,10 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-        
+
         params["pad_empty"] = "y" if pad_empty else "n"
         params["force_daily"] = "y" if force_daily else "n"
-            
+
         return self._request(f"apps/{app_id}/reviews/by_date", params=params)
 
     def get_review_summary_by_country(
@@ -257,7 +282,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get review summary by country.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -268,12 +293,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing review summary by country.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -290,7 +315,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/reviews/by_country", params=params)
 
     def get_review_summary_by_stars(
@@ -307,7 +332,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get review summary by stars (rating).
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -318,12 +343,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing review summary by stars.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -340,7 +365,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/reviews/by_rating", params=params)
 
     def get_review_star_overview(
@@ -357,7 +382,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get review star overview.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -368,12 +393,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing review star overview.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -390,7 +415,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/reviews/overview", params=params)
 
     def get_sentiment_breakdown(
@@ -407,7 +432,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get sentiment breakdown.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -418,12 +443,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing sentiment breakdown.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -440,7 +465,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/sentiment/breakdown", params=params)
 
     def get_sentiment_timeline(
@@ -458,7 +483,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get sentiment timeline.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -471,12 +496,12 @@ class AppBotClient:
             topic: Topic, custom topic or tag ID to filter to.
             force_daily: Whether to prevent result from being aggregated over increasingly
                          large time periods based on supplied date range.
-            
+
         Returns:
             Dictionary containing sentiment timeline.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -493,9 +518,9 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-        
+
         params["force_daily"] = "y" if force_daily else "n"
-            
+
         return self._request(f"apps/{app_id}/sentiment/timeline", params=params)
 
     def get_versions(
@@ -512,7 +537,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get versions.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -523,12 +548,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing versions.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -545,7 +570,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/versions", params=params)
 
     def get_sentiment_grade(
@@ -562,7 +587,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get sentiment grade.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -573,12 +598,12 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing sentiment grade.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -595,7 +620,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/sentiment/grade", params=params)
 
     def get_words(
@@ -613,10 +638,10 @@ class AppBotClient:
     ) -> Dict:
         """
         Get words by type.
-        
+
         Args:
             app_id: ID of the application.
-            word_type: Type of words to get (popular, critical, interesting, trending_up, 
+            word_type: Type of words to get (popular, critical, interesting, trending_up,
                        trending_down, new).
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
             end: End date in YYYY-MM-DD format. Defaults to today.
@@ -626,16 +651,23 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing words by type.
         """
-        valid_word_types = ["popular", "critical", "interesting", "trending_up", "trending_down", "new"]
+        valid_word_types = [
+            "popular",
+            "critical",
+            "interesting",
+            "trending_up",
+            "trending_down",
+            "new",
+        ]
         if word_type not in valid_word_types:
             raise ValueError(f"word_type must be one of {valid_word_types}")
-            
+
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -652,46 +684,46 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/words/{word_type}", params=params)
-        
+
     def get_popular_words(
         self,
         app_id: Union[int, str],
         start: Optional[str] = None,
         end: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict:
         """
         Get popular words.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
             end: End date in YYYY-MM-DD format. Defaults to today.
             **kwargs: Additional parameters to pass to the API.
-            
+
         Returns:
             Dictionary containing popular words.
         """
         return self.get_words(app_id, "popular", start, end, **kwargs)
-        
+
     def get_critical_words(
         self,
         app_id: Union[int, str],
         start: Optional[str] = None,
         end: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict:
         """
         Get critical words.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
             end: End date in YYYY-MM-DD format. Defaults to today.
             **kwargs: Additional parameters to pass to the API.
-            
+
         Returns:
             Dictionary containing critical words.
         """
@@ -712,7 +744,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get phrases.
-        
+
         Args:
             app_id: ID of the application.
             phrase_word_count: Number of words in the phrase (2, 3, or 4).
@@ -724,15 +756,15 @@ class AppBotClient:
             dlangs: List of detected languages to filter results.
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
-            
+
         Returns:
             Dictionary containing phrases.
         """
         if phrase_word_count not in [2, 3, 4]:
             raise ValueError("phrase_word_count must be 2, 3, or 4")
-            
+
         params = {"phrase_word_count": phrase_word_count}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -749,7 +781,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/phrases", params=params)
 
     def get_app_topics(
@@ -767,7 +799,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get app topics.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -779,12 +811,12 @@ class AppBotClient:
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
             include_all: Include custom topics and tags in output, as well as topics.
-            
+
         Returns:
             Dictionary containing app topics.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -801,9 +833,9 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-        
+
         params["include_all"] = "y" if include_all else "n"
-            
+
         return self._request(f"apps/{app_id}/topics", params=params)
 
     def get_topic_reviews(
@@ -822,7 +854,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get reviews for a topic.
-        
+
         Args:
             app_id: ID of the application.
             topic_id: ID of the topic.
@@ -835,12 +867,12 @@ class AppBotClient:
             version: Version of app associated with review.
             topic: Topic, custom topic or tag ID to filter to.
             page: Page number to fetch.
-            
+
         Returns:
             Dictionary containing topic reviews.
         """
         params = {"page": page}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -857,7 +889,7 @@ class AppBotClient:
             params["version"] = version
         if topic:
             params["topic"] = topic
-            
+
         return self._request(f"apps/{app_id}/topics/{topic_id}/reviews", params=params)
 
     def get_ratings_live(
@@ -868,25 +900,25 @@ class AppBotClient:
     ) -> Dict:
         """
         Get live ratings.
-        
+
         Args:
             app_id: ID of the application.
             country: iTunes country code or Google Play country code.
             resolve_to: (Google Play Only) Select between publicly or privately sourced datasets.
                         Valid values: self, private, public. Defaults to self.
-            
+
         Returns:
             Dictionary containing live ratings.
         """
         params = {}
-        
+
         if country:
             params["country"] = country
         if resolve_to:
             if resolve_to not in ["self", "private", "public"]:
                 raise ValueError("resolve_to must be one of: self, private, public")
             params["resolve_to"] = resolve_to
-            
+
         return self._request(f"apps/{app_id}/ratings", params=params)
 
     def get_ratings_historical(
@@ -899,7 +931,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get historical ratings.
-        
+
         Args:
             app_id: ID of the application.
             start: Start date in YYYY-MM-DD format. Defaults to 90 days ago.
@@ -907,12 +939,12 @@ class AppBotClient:
             country: iTunes country code or Google Play country code.
             resolve_to: (Google Play Only) Select between publicly or privately sourced datasets.
                         Valid values: self, private, public. Defaults to self.
-            
+
         Returns:
             Dictionary containing historical ratings.
         """
         params = {}
-        
+
         if start:
             params["start"] = start
         if end:
@@ -923,7 +955,7 @@ class AppBotClient:
             if resolve_to not in ["self", "private", "public"]:
                 raise ValueError("resolve_to must be one of: self, private, public")
             params["resolve_to"] = resolve_to
-            
+
         return self._request(f"apps/{app_id}/ratings/historical", params=params)
 
     def get_ratings_bulk(
@@ -936,7 +968,7 @@ class AppBotClient:
     ) -> Dict:
         """
         Get bulk ratings.
-        
+
         Args:
             app_id: ID of the application.
             start: Start datetime in ISO8601 format.
@@ -944,17 +976,17 @@ class AppBotClient:
             resolve_to: (Google Play Only) Select between publicly or privately sourced datasets.
                         Valid values: self, private, public. Defaults to self.
             page_size: Number of datapoints per page (max 1000). Defaults to 20.
-            
+
         Returns:
             Dictionary containing bulk ratings.
         """
         params = {"start": start, "page_size": page_size}
-        
+
         if next_page_token:
             params["next_page_token"] = next_page_token
         if resolve_to:
             if resolve_to not in ["self", "private", "public"]:
                 raise ValueError("resolve_to must be one of: self, private, public")
             params["resolve_to"] = resolve_to
-            
+
         return self._request(f"apps/{app_id}/ratings/bulk", params=params)

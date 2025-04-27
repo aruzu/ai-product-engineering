@@ -1,4 +1,6 @@
-Okay, here is a step-by-step checklist designed for a junior developer LLM to implement the feature request analysis pipeline. This checklist includes project setup, linting/formatting, and unit testing practices.
+# App Review Feature Request Analysis - Action Plan
+
+This step-by-step checklist is designed for implementing the feature request analysis pipeline. The checklist includes project setup, linting/formatting, and unit testing practices.
 
 ---
 
@@ -212,4 +214,20 @@ Okay, here is a step-by-step checklist designed for a junior developer LLM to im
     * Ensure all checklist items are complete.
     * Make sure API keys are not committed (`.env` is in `.gitignore`).
     * Commit the final version to Git.
+    
+**Phase 8: Multi-Market Analysis**
+
+* [ ] **26. Create Scripts for Multi-Market Analysis:**
+    * Implement `pull_all_markets.py` to gather reviews from all available markets.
+    * Implement `analyze_all_markets.py` to process reviews from multiple markets.
+    * Add unit tests for multi-market analysis scripts.
+
+**Phase 9: Data Management**
+
+* [ ] **27. Create Data Management Tools:**
+    * Implement cleanup utility script for data management.
+    * Add options for dry run and keeping recent files.
+    * Implement progress visualization for cleanup operations.
+    * Ensure all code follows project quality standards.
+    * Add unit tests for data management tools.
 

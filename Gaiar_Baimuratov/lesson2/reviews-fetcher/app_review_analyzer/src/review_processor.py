@@ -47,13 +47,13 @@ def load_reviews(file_path: str) -> List[str]:
     return reviews
 
 
-def chunk_reviews(reviews: List[str], max_tokens: int = 4000) -> List[List[str]]:
+def chunk_reviews(reviews: List[str], max_tokens: int = 8192) -> List[List[str]]:
     """
     Chunk reviews to ensure they fit within token limits.
 
     Args:
         reviews: List of review text strings.
-        max_tokens: Maximum number of tokens per chunk.
+        max_tokens: Maximum number of tokens per chunk. Default is 8192 for GPT-4o.
 
     Returns:
         List of lists, where each inner list is a chunk of reviews.
@@ -211,6 +211,8 @@ def group_and_refine_features(
                 - For example, keep "Add QR code for returns" separate from other return-related features
                 - Avoid creating high-level general categories that lose important details
                 - Don't number your responses, just provide one feature per line
+                - ALL feature descriptions MUST be in English, regardless of the input language
+                - Translate the feature descriptions to English if necessary
                 
                 Here are the raw feature requests:
                 
@@ -274,7 +276,7 @@ def generate_interview_questions(feature_topic: str, client=None) -> List[str]:
                 """,
             },
         ],
-        temperature=0.3,
+        temperature=0.5,
     )
 
     # Extract the questions from the response
