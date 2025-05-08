@@ -1,12 +1,23 @@
 import asyncio
+from pydantic import BaseModel
 from dotenv import load_dotenv 
 from agents import Agent, ModelSettings, function_tool, handoff, Runner, HandoffInputData
 from openai.types.responses import ResponseTextDeltaEvent
-from agents.extensions import handoff_filters
+from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 from bug_handler_agent import bug_handler_agent
 from feature_handler_agent import feature_handler_agent
 
 load_dotenv()
+
+class RouterOutput(BaseModel):
+    reason: str
+    """Your reasoning for why this task is important"""
+
+    task_description: str
+    """Detailed description of the task"""
+
+    task_classification: str
+    """Bug or feature request task"""
 
 @function_tool
 def read_report() -> str:
@@ -26,7 +37,7 @@ def read_report() -> str:
 
 router_agent = Agent(
     name="Router Agent",
-    instructions="""{RECOMMENDED_PROMPT_PREFIX}
+    instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
                     You are the router agent. Your goal is to read a report about product research 
                     and decide which task is the most important to do next. This task should be 
                     classified either as a bug or as a feature request.
@@ -34,21 +45,18 @@ router_agent = Agent(
                     for handling bugs or feature requests.
                     For feature request - ask Agent to do a research on how to implement the feature into the product.
                     For Bugs - ask Agent to create a bug ticket.""",
-    model="gpt-4.1-mini",
+    model="gpt-4.1",
     tools=[read_report],
-    #add input filter?
-    handoffs=[handoff(bug_handler_agent),
-               handoff(feature_handler_agent)]
+    handoffs=[bug_handler_agent, feature_handler_agent]
 )
 
 async def main():
     """Main function to simulate an agent interaction."""
     print("--- Router Agent Simulation Start ---")
-    result = Runner.run_streamed(router_agent, input="Analyze the latest report and decide which task to do next. Your final output should be task description, task classification and reason why it was chosen.")
+    result = Runner.run_streamed(router_agent, input="Analyze the latest report and decide which task to do next.")
     async for event in result.stream_events():
         if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
             print(event.data.delta, end="", flush=True)
-    print(result.final_output)
     print("--- Router Agent Simulation End ---")
 
 if __name__ == "__main__":
