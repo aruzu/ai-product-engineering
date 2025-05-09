@@ -46,8 +46,10 @@ router_agent = Agent(
                     For feature request - ask Agent to do a research on how to implement the feature into the product.
                     For Bugs - ask Agent to create a bug ticket.""",
     model="gpt-4.1",
-    tools=[read_report],
-    handoffs=[bug_handler_agent, feature_handler_agent]
+    tools=[read_report, bug_handler_agent.as_tool(tool_name="handle_bugs", 
+                                                  tool_description="Creates a bug ticket"), 
+           feature_handler_agent.as_tool(tool_name="handle_feature_request", 
+           tool_description="Creates a research plan and executes it")]
 )
 
 async def main():
