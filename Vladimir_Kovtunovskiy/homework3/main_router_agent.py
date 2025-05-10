@@ -41,9 +41,9 @@ async def run(mcp_server: MCPServer, directory_path: str):
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
     You are a specialized agent for handling bug reports.
     Your primary task is to create a github issue using the available tools or mcp.
-    The user will provide a description of the bug. First search if github has simillar issue, if not create a new one as critical bug.
+    The user will provide a description of the bug. First search if github has simillar issue, if not create a new issue as a critical bug.
     """,
-    model="gpt-4.1-mini",
+    model="gpt-4.1",
     handoff_description="An agent that specializes in creating and managing bug reports.",
     mcp_servers=[mcp_server]
     )
