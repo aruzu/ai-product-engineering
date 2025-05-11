@@ -1,11 +1,13 @@
 import asyncio
+import os
 from pydantic import BaseModel
 from dotenv import load_dotenv 
 from agents.mcp import MCPServer, MCPServerStdio
 from agents import Agent, ModelSettings, function_tool, handoff, Runner, HandoffInputData, trace
 from openai.types.responses import ResponseTextDeltaEvent
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
-from feature_handler_agent import feature_handler_agent
+from feature_handler_agent import feature_handler_manager_agent
+from bug_handler_agent import bug_handler_agent
 
 load_dotenv()
 
@@ -36,17 +38,7 @@ def read_report() -> str:
         return error_msg
 
 async def run(mcp_server: MCPServer, directory_path: str):
-    bug_handler_agent = Agent(
-    name="Bug Handler Agent",
-    instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
-    You are a specialized agent for handling bug reports.
-    Your primary task is to create a github issue using the available tools or mcp.
-    The user will provide a description of the bug. First search if github has simillar issue, if not create a new issue as a critical bug.
-    """,
-    model="gpt-4.1",
-    handoff_description="An agent that specializes in creating and managing bug reports.",
-    mcp_servers=[mcp_server]
-    )
+    bug_handler_agent.mcp_servers = [mcp_server]
 
     router_agent = Agent(
         name="Router Agent",
@@ -56,27 +48,35 @@ async def run(mcp_server: MCPServer, directory_path: str):
                     classified either as a bug or as a feature request.
                     After classification handoff corresponding feature to a specialized agent
                     for handling bugs or feature requests.
-                    For feature request - ask Agent to do a research on how to implement the feature into the product.
-                    For Bugs - ask Agent to create an issue.""",
+                    For Feature request - ask Agent to do a research on how to implement the feature into the product.
+                    For Bugs - ask Agent to create an issue on GitHub.""",
         model="gpt-4.1",
         tools=[read_report, bug_handler_agent.as_tool(tool_name="handle_bugs", 
-                                                  tool_description="Creates a bug ticket"), 
-           feature_handler_agent.as_tool(tool_name="handle_feature_request", 
+                                                  tool_description="Creates an issue on GitHub"), 
+           feature_handler_manager_agent.as_tool(tool_name="handle_feature_request", 
            tool_description="Creates a research plan and executes it")])
 
-    message = "Analyze the latest report and decide which task to do next."
+    message = "Analyze the latest report. Either handle a bug or feature request. When everything is finished say good bye to the user."
     print("\n" + "-" * 40)
     print(f"Running: {message}")
-    result = await Runner.run(starting_agent=router_agent, input=message)
-    print(result.final_output)
+    result = Runner.run_streamed(router_agent, input=message)
+    async for event in result.stream_events():
+        if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+            print(event.data.delta, end="", flush=True)
 
 async def main():
+    github_command = "npx -y @modelcontextprotocol/server-github"
     # Initialize the bug handler agent with MCP
     async with MCPServerStdio(
         cache_tools_list=True,  # Cache the tools list, for demonstration
-        params={"command": "uvx", "args": ["mcp-server-git"]},
+        params={"command": "npx", 
+                "args": github_command.split(" ")[1:], 
+                "env": {
+                    "GITHUB_TOKEN": os.environ["GITHUB_TOKEN"]
+                }
+                },
     ) as server:
-        with trace(workflow_name="MCP Git Example"):
+        with trace(workflow_name="MCP GitHub Example"):
             await run(server, "${GITHUB_REPO}")
 
 if __name__ == "__main__":
