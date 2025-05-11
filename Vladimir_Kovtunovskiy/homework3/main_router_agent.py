@@ -37,8 +37,9 @@ def read_report() -> str:
         error_msg = f"An error occurred during reading the report: {str(e)}"
         return error_msg
 
-async def run(mcp_server: MCPServer, directory_path: str):
-    bug_handler_agent.mcp_servers = [mcp_server]
+async def run(mcp_server1: MCPServer, mcp_server2: MCPServer, directory_path: str):
+    bug_handler_agent.mcp_servers = [mcp_server1]
+    feature_handler_manager_agent.mcp_servers = [mcp_server2]
 
     router_agent = Agent(
         name="Router Agent",
@@ -66,18 +67,30 @@ async def run(mcp_server: MCPServer, directory_path: str):
 
 async def main():
     github_command = "npx -y @modelcontextprotocol/server-github"
-    # Initialize the bug handler agent with MCP
+    slack_command = "npx -y @modelcontextprotocol/server-slack"
+
+    # Initialize two MCP servers
     async with MCPServerStdio(
-        cache_tools_list=True,  # Cache the tools list, for demonstration
+        cache_tools_list=True,
         params={"command": "npx", 
                 "args": github_command.split(" ")[1:], 
                 "env": {
                     "GITHUB_TOKEN": os.environ["GITHUB_TOKEN"]
                 }
                 },
-    ) as server:
+    ) as server1, MCPServerStdio(
+        name="Slack MCP Server",
+        params={
+            "command": "npx",
+            "args": slack_command.split(" ")[1:],
+            "env": {
+                "SLACK_BOT_TOKEN":  os.environ["SLACK_BOT_TOKEN"],
+                "SLACK_TEAM_ID": os.environ["SLACK_TEAM_ID"]
+            },
+        },
+    ) as server2:
         with trace(workflow_name="MCP GitHub Example"):
-            await run(server, "${GITHUB_REPO}")
+            await run(server1, server2, "${GITHUB_REPO}")
 
 if __name__ == "__main__":
     asyncio.run(main())

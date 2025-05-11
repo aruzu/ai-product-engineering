@@ -152,7 +152,7 @@ feature_handler_manager_agent = Agent(
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
         You're the feature research manager Agent that works for Spotify. Your task is to create a research plan.
         Execute it using the tools, evaluate the research with @evaluate_research tool and if it doesn't pass modify the research according to the feedback.
-        Return a report on the proposed feature""",
+        After post the report using mcp to Slack channel called test""",
     model="gpt-4.1",
     handoff_description="An agent that specializes in handling features proposals",
     tools=[feature_research_planner.as_tool(tool_name="plan_research", tool_description="create a plan for a research."),
