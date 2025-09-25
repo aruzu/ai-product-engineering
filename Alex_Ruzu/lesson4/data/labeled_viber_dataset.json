@@ -1,0 +1,37 @@
+[
+  {
+    "review": "excellent experienced 😘",
+    "label": "feature",
+    "known_issues": [],
+    "is_duplicate": false,
+    "original_score": 5,
+    "reasoning": "Automatic fallback classification"
+  },
+  {
+    "review": "Viber plus settings reset when app is closed - invisible mode keeps resetting to off whenever the app is swiped/closed.",
+    "label": "feature",
+    "known_issues": [],
+    "is_duplicate": false,
+    "original_score": 3,
+    "reasoning": "Automatic fallback classification"
+  },
+  {
+    "review": "Please fix your app. I've been using viber since 2020 and there are still major bugs that haven't been fixed. Sometimes when I write a sentence it would send but keep the last word of it and send it right after my message. Another thing is my aliases. I would go and put a 30 or more character alias and it would say alias error even tho the limit of characters is 40. Besides, why do spaces count as characters anyway? It even shows the incorrect number of subscribers in a channel or none sometimes",
+    "label": "bug",
+    "known_issues": [
+      "Message splitting bug reported multiple times",
+      "Alias character limit issues"
+    ],
+    "is_duplicate": true,
+    "original_score": 3,
+    "reasoning": "This appears to be a duplicate of previously reported messaging and alias bugs"
+  },
+  {
+    "review": "best",
+    "label": "feature",
+    "known_issues": [],
+    "is_duplicate": false,
+    "original_score": 5,
+    "reasoning": "Automatic fallback classification"
+  }
+]
