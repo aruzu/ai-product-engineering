@@ -1,5 +1,5 @@
 """
-Скрипт для создания размеченного dataset'а из viber.csv
+Script for creating labeled dataset from viber.csv
 """
 import pandas as pd
 import json
@@ -17,7 +17,7 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 def classify_review_with_ai(content: str) -> dict:
     """
-    Использует GPT для автоматической классификации отзыва
+    Uses GPT for automatic review classification
     """
     prompt = f"""
     Классифицируй этот отзыв пользователя о приложении Viber:
@@ -60,26 +60,26 @@ def classify_review_with_ai(content: str) -> dict:
 
 def create_evaluation_dataset(csv_file: str, sample_size: int = 20):
     """
-    Создает размеченный dataset для evaluation
+    Creates labeled dataset for evaluation
     """
-    # Читаем CSV
+    # Read CSV
     df = pd.read_csv(csv_file)
 
-    # Берем выборку
+    # Take sample
     sample_df = df.sample(n=min(sample_size, len(df)), random_state=42)
 
     labeled_data = []
 
-    print(f"Обрабатываем {len(sample_df)} отзывов...")
+    print(f"Processing {len(sample_df)} reviews...")
 
     for idx, row in sample_df.iterrows():
         content = row['content']
-        print(f"\nОбрабатываем: {content[:50]}...")
+        print(f"\nProcessing: {content[:50]}...")
 
-        # Автоматическая классификация
+        # Automatic classification
         classification = classify_review_with_ai(content)
 
-        # Создаем ReviewRow
+        # Create ReviewRow
         review_row = ReviewRow(
             review=content,
             label=classification["label"],
@@ -100,7 +100,7 @@ def create_evaluation_dataset(csv_file: str, sample_size: int = 20):
 
 def save_labeled_dataset(labeled_data, filename: str = "labeled_viber_dataset.json"):
     """
-    Сохраняет размеченный dataset
+    Saves labeled dataset
     """
     export_data = []
     for item in labeled_data:
@@ -116,24 +116,24 @@ def save_labeled_dataset(labeled_data, filename: str = "labeled_viber_dataset.js
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(export_data, f, indent=2, ensure_ascii=False)
 
-    print(f"\nДанные сохранены в {filename}")
+    print(f"\nData saved to {filename}")
     return filename
 
 if __name__ == "__main__":
-    # Создаем размеченный dataset
+    # Create labeled dataset
     csv_path = "data/viber.csv"
     labeled_data = create_evaluation_dataset(csv_path, sample_size=15)
 
-    # Сохраняем
+    # Save
     dataset_file = save_labeled_dataset(labeled_data, "data/labeled_viber_dataset.json")
 
-    # Статистика
+    # Statistics
     bugs = sum(1 for item in labeled_data if item["review_row"].label == "bug")
     features = sum(1 for item in labeled_data if item["review_row"].label == "feature")
     duplicates = sum(1 for item in labeled_data if item["review_row"].is_duplicate)
 
-    print(f"\nСтатистика dataset'а:")
-    print(f"Всего отзывов: {len(labeled_data)}")
+    print(f"\nDataset statistics:")
+    print(f"Total reviews: {len(labeled_data)}")
     print(f"Bugs: {bugs}")
     print(f"Features: {features}")
-    print(f"Дубликаты: {duplicates}")
+    print(f"Duplicates: {duplicates}")

@@ -449,7 +449,7 @@ LOG_LEVEL=INFO                           # Logging verbosity
 ```bash
 # Repository clone
 git clone <repository-url>
-cd Alex_Ruzu/lesson2
+cd lesson2
 
 # Environment creation
 python -m venv venv
