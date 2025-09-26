@@ -1,0 +1,33 @@
+{
+  "total_sessions": 41,
+  "overall_conversion": [
+    {
+      "step": "landing_page",
+      "pct_of_total": 1.0
+    },
+    {
+      "step": "signup_start",
+      "pct_of_total": 0.878
+    },
+    {
+      "step": "signup_complete",
+      "pct_of_total": 0.6341
+    },
+    {
+      "step": "onboarding_start",
+      "pct_of_total": 0.3902
+    },
+    {
+      "step": "onboarding_complete",
+      "pct_of_total": 0.3659
+    },
+    {
+      "step": "purchase",
+      "pct_of_total": 0.3659
+    }
+  ],
+  "largest_drop_step": "signup_complete",
+  "signup_to_onboarding_leak_sessions": 10,
+  "signup_to_onboarding_leak_rate": 0.2439,
+  "potential_rev_loss_placeholder": 468.75
+}

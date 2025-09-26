@@ -47,7 +47,10 @@ class Assistant(Agent):
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
-        llm=openai.realtime.RealtimeModel(voice="coral")
+        llm=openai.realtime.RealtimeModel(
+            voice="coral",
+            model="gpt-4o-mini-realtime-preview" # or "gpt-4o-realtime-preview"
+            )
     )
     await session.start(
         room=ctx.room,
